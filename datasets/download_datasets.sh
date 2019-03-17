@@ -12,4 +12,9 @@ unzip ground_truth_mask.zip
 
 cd ..
 
+mkdir MSRA10K
+cd MSRA10K
+wget http://mftp.mmcheng.net/Data/MSRA10K_Imgs_GT.zip
+unzip MSRA10K_Imgs_GT.zip
 
+cd ..
