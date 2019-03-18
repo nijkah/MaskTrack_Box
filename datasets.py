@@ -70,7 +70,7 @@ class DAVIS(data.Dataset):
 
         index = index % self.size
         img = cv2.imread(self.image_list[index])
-
+        
 
         gt = np.expand_dims(imread(self.gt_list[index], mode='P'), axis=3)
         gt[gt==255] = 1
@@ -188,4 +188,153 @@ class YTB_VOS(data.Dataset):
     def __len__(self):
         return self.size * self.replicates
 
+class ECSSD(data.Dataset):
+    def __init__(self, inference_size=[-1, -1], is_cropped = False, root = '', replicates = 1, aug=False):
+        self.is_cropped = is_cropped
+        self.render_size = inference_size
+        self.replicates = replicates
+        self.aug = aug
+
+        image_root = join(root, 'images')
+        gt_root = join(root, 'ground_truth_mask')
+        #if train:
+        #    seqs_file = 'train_seqs.txt'
+        #else:
+        #    seqs_file = 'val_seqs.txt'
+        #seq_list = sorted(np.loadtxt(join(root, seqs_file), dtype=str).tolist())
+
+        self.image_list = []
+        self.gt_list = []
+        files = sorted(os.listdir(image_root))
+        for i in range(len(files)):
+            img = join(image_root, files[i])
+            gt = join(gt_root, files[i][:-4]+'.png')
+            self.image_list += [img]
+            self.gt_list += [gt]
+
+        self.size = len(self.image_list)
+        self.frame_size = cv2.imread(self.image_list[0]).shape
+
+        if (self.render_size[0] < 0) or (self.render_size[1] < 0) or (self.frame_size[0]%64) or (self.frame_size[1]%64):
+            self.render_size[0] = ( (self.frame_size[0])//64 ) * 64
+            self.render_size[1] = ( (self.frame_size[1])//64 ) * 64
+
+       
+        assert (len(self.image_list) == len(self.gt_list))
+
+    def __getitem__(self, index):
+
+        index = index % self.size
+        img = cv2.imread(self.image_list[index])
+        
+
+        gt = np.expand_dims(imread(self.gt_list[index], mode='P'), axis=3)
+        gt[gt==255] = 1
+
+
+        image_size = img.shape[:2]
+
+        if self.aug:
+            img, gt = aug_batch(img, gt)
+            
+        #if self.is_cropped:
+        #    cropper = StaticRandomCrop(image_size, self.crop_size)
+        #else:
+        #    cropper = StaticCenterCrop(image_size, self.render_size)
+        #images = list(map(cropper, images))
+
+        #img = cropper(img)
+        #gt = cropper(gt)
+
+        #img = np.array(img).transpose(2,0,1)
+        #gt = gt.transpose(2,0,1)
+        #gt = np.squeeze(gt)
+        img = img.transpose(2, 0, 1)
+        gt = gt.transpose(2, 0, 1)
+
+        img = torch.from_numpy(img.astype(np.float32))
+        gt = torch.from_numpy(gt.astype(np.float32))
+
+
+
+        return img, gt
+
+    def __len__(self):
+        return self.size * self.replicates
+
+class MSRA10K(data.Dataset):
+    def __init__(self, inference_size=[-1, -1], is_cropped = False, root = '', replicates = 1, aug=False):
+        self.is_cropped = is_cropped
+        self.render_size = inference_size
+        self.replicates = replicates
+        self.aug = aug
+
+        image_root = join(root, 'images')
+        gt_root = join(root, 'annotations')
+        #if train:
+        #    seqs_file = 'train_seqs.txt'
+        #else:
+        #    seqs_file = 'val_seqs.txt'
+        #seq_list = sorted(np.loadtxt(join(root, seqs_file), dtype=str).tolist())
+        #seq_list = sorted(os.listdir(image_root))
+        
+        self.image_list = []
+        self.gt_list = []
+        files = sorted(os.listdir(image_root))
+        for i in range(len(files)):
+            img = join(image_root, files[i])
+            gt = join(gt_root, files[i][:-4]+'.png')
+            self.image_list += [img]
+            self.gt_list += [gt]
+                
+        self.size = len(self.image_list)
+        self.frame_size = cv2.imread(self.image_list[0]).shape
+
+        if (self.render_size[0] < 0) or (self.render_size[1] < 0) or (self.frame_size[0]%64) or (self.frame_size[1]%64):
+            self.render_size[0] = ( (self.frame_size[0])//64 ) * 64
+            self.render_size[1] = ( (self.frame_size[1])//64 ) * 64
+
+       
+        assert (len(self.image_list) == len(self.gt_list))
+
+    def __getitem__(self, index):
+
+        index = index % self.size
+        img = cv2.imread(self.image_list[index])
+        
+
+        gt = np.expand_dims(imread(self.gt_list[index], mode='P'), axis=3)
+        gt[gt!=255] = 0
+        gt[gt==255] = 1
+
+
+        image_size = img.shape[:2]
+
+        if self.aug:
+            img, gt = aug_batch(img, gt)
+            
+        #if self.is_cropped:
+        #    cropper = StaticRandomCrop(image_size, self.crop_size)
+        #else:
+        #    cropper = StaticCenterCrop(image_size, self.render_size)
+        #images = list(map(cropper, images))
+
+        #img = cropper(img)
+        #gt = cropper(gt)
+
+        #img = np.array(img).transpose(2,0,1)
+        #gt = gt.transpose(2,0,1)
+        #gt = np.squeeze(gt)
+        img = img.transpose(2, 0, 1)
+        gt = gt.transpose(2, 0, 1)
+
+        img = torch.from_numpy(img.astype(np.float32))
+        gt = torch.from_numpy(gt.astype(np.float32))
+
+
+
+        return img, gt
+
+    def __len__(self):
+        return self.size * self.replicates
 
