@@ -1,6 +1,7 @@
 # naive-masktrack
 
-This is MaskTrack implementation in pytorch.
+This is MaskTrack_box implementation in pytorch.
+Masktrack_box requires only a bounding box of the target for video object segmentation.
 I simplify the deformation method by imgaug library.
 And test code does not include fine-tuning at all.
 
