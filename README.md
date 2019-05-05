@@ -1,4 +1,4 @@
-# naive-masktrack
+# MaskTrack_Box
 
 This is MaskTrack_box implementation in pytorch.
 
