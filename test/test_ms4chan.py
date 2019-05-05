@@ -1,27 +1,23 @@
-import scipy
-from scipy import ndimage
+
 import cv2
 import numpy as np
-import sys
-#sys.path.insert(0,'/data1/ravikiran/SketchObjPartSegmentation/src/caffe-switch/caffe/python')
-#import caffe
-import torch
-from torch.autograd import Variable
-import torchvision.models as models
-import torch.nn.functional as F
-import deeplab_resnet 
-from collections import OrderedDict
-import os
-from os import walk
 import matplotlib.pyplot as plt
-import torch.nn as nn
+import os
+import sys
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+sys.path.append('..')
+
+
+from models import deeplab_resnet 
+from collections import OrderedDict
 from docopt import docopt
-from metric import get_iou
-from makebb import makeBB
+from tools.utils import get_iou
 from datasets import DAVIS2016
 import json
-from collections import OrderedDict
 from finetune import *
 
 davis_path = '/home/hakjine/datasets/DAVIS/DAVIS-2016/DAVIS'
@@ -86,7 +82,7 @@ def test(model, vis=False, save=True):
                 #model = finetune(model, img_original, gt_original)
 
                 fc = np.ones([h, w, 1], dtype=float) *-100
-                bb = makeBB(gt)
+                bb = cv2.boundingRect(gt.astype('uint8'))
                 fc[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2], 0] = 100
                 #fc[np.where(gt==1)] = 100
                 #fc += np.expand_dims(gt, 2)
@@ -128,8 +124,8 @@ def test(model, vis=False, save=True):
                 plt.clf()
 
             fc = np.ones([h, w, 1], dtype=float) * -100
-            bb = makeBB(output, 1.1)
-            if bb is not None:
+            bb = cv2.boundingRect(output.astype('uint8'))
+            if bb[2] != 0 and bb[3] != 0:
                 #fc[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2], 0] = 100
                 #erode = cv2.erode(output, kernel, iterations=3)
                 fc[np.where(output==1)] = 100
@@ -140,7 +136,7 @@ def test(model, vis=False, save=True):
                 if not os.path.isdir(folder):
                     os.makedirs(folder)
                 #Image.fromarray(output.astype(int)).save(os.path.join('Results', i+'.png'))
-                scipy.misc.imsave(os.path.join(save_path, i+'.png'),output)
+                cv2.imwrite(os.path.join(save_path, i+'.png'),output)
             seq_iou += iou
 
         print(seq, seq_iou/len(img_list))

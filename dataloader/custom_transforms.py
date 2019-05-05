@@ -4,19 +4,12 @@ import torch.utils.data as data
 import torch.nn as nn
 
 import os, math, random
-from os.path import *
+from os.path import join
 import numpy as np
 
-from glob import glob
-
 import cv2
-from scipy.misc import imread, imresize, imsave
-
 import imgaug as ia
 from imgaug import augmenters as iaa
-from makebb import makeBB
-
-import matplotlib.pyplot as plt
 
 
 def outS(i):
@@ -102,17 +95,13 @@ def aug_batch(img, gt):
 
     kernel = np.ones((int(scale*5), int(scale*5)), np.uint8)
 
-    #img_temp = scale_im(img_temp,scale)
-
-
-    #gt_temp = scale_gt(gt_temp,scale)
     
     mask = seq2.augment_segmentation_maps([gt_temp_map])[0].get_arr_int()
     mask= cv2.resize(mask,(dim,dim) , interpolation = cv2.INTER_NEAREST).astype(float)
     
-    bb = makeBB(gt_temp, 0.9+(flip_p)/float(4))
+    bb = cv2.boundingRect(gt_temp.astype('uint8'))
  
-    if bb is not None:
+    if bb[2] != 0 and bb[3] != 0:
         fc = np.ones([dim, dim, 1]) * -100
         #fc[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2], 0] = 100
         if flip_p <= 1.0:

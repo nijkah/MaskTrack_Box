@@ -2,11 +2,9 @@ import torch
 import torch.utils.data as data
 
 import os, math, random
-from os.path import *
+from os.path import join
 import numpy as np
 
-from glob import glob
-from scipy.misc import imread, imresize, imsave
 import cv2
 from custom_transforms import aug_batch
 from PIL import Image
@@ -72,7 +70,7 @@ class DAVIS(data.Dataset):
         img = cv2.imread(self.image_list[index])
         
 
-        gt = np.expand_dims(imread(self.gt_list[index], mode='P'), axis=3)
+        gt = np.expand_dims(np.array(Image.open(self.gt_list[index])), axis=2)
         gt[gt==255] = 1
 
 
@@ -84,10 +82,10 @@ class DAVIS(data.Dataset):
         #if self.is_cropped:
         #    cropper = StaticRandomCrop(image_size, self.crop_size)
         #else:
-        #    cropper = StaticCenterCrop(image_size, self.render_size)
-        #images = list(map(cropper, images))
+        #    cropper = Statimreadize)
+        #images = list(map(imread
 
-        #img = cropper(img)
+        #img = cropper(img)imread
         #gt = cropper(gt)
 
         #img = np.array(img).transpose(2,0,1)
@@ -228,7 +226,7 @@ class ECSSD(data.Dataset):
         img = cv2.imread(self.image_list[index])
         
 
-        gt = np.expand_dims(imread(self.gt_list[index], mode='P'), axis=3)
+        gt = np.expand_dims(np.array(Image.open(self.gt_list[index])), axis=2)
         gt[gt==255] = 1
 
 
@@ -303,7 +301,7 @@ class MSRA10K(data.Dataset):
         img = cv2.imread(self.image_list[index])
         
 
-        gt = np.expand_dims(imread(self.gt_list[index], mode='P'), axis=3)
+        gt = np.expand_dims(np.array(Image.open(self.gt_list[index])), axis=2)
         gt[gt!=255] = 0
         gt[gt==255] = 1
 

@@ -4,59 +4,19 @@ import torch.utils.model_zoo as model_zoo
 import torch
 from torch.nn import functional as F
 import numpy as np
-from torchvision import models
 affine_par = True
 
-model_url = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
+
 def outS(i):
     i = int(i)
     i = (i+1)/2
     i = int(np.ceil((i+1)/2.0))
     i = (i+1)/2
     return i
-
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=1, bias=False)
-
-class up(nn.Module):
-    def __init__(self, in_ch, out_ch, scale=2, bilinear=True):
-        super(up, self).__init__()
-
-        #  would be a nice idea if the upsampling could be learned too,
-        #  but my machine do not have enough memory to handle all those weights
-        if bilinear:
-            self.up = nn.Upsample(scale_factor=scale, mode='bilinear', align_corners=True)
-        else:
-            self.up = nn.ConvTranspose2d(in_ch//2, in_ch//2, 2, stride=2)
-
-        self.conv = nn.Sequential(
-                nn.Conv2d(in_ch, out_ch, 3, padding=1),
-                nn.BatchNorm2d(out_ch),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(out_ch, out_ch, 3, padding=1),
-                nn.BatchNorm2d(out_ch),
-                nn.ReLU(inplace=True)
-        )
-
-    def forward(self, x1, x2):
-        x1 = self.up(x1)
-        
-        # input is CHW
-        diffY = x2.size()[2] - x1.size()[2]
-        diffX = x2.size()[3] - x1.size()[3]
-
-        x1 = F.pad(x1, (diffX // 2, diffX - diffX//2,
-                        diffY // 2, diffY - diffY//2))
-        
-        # for padding issues, see 
-        # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
-        # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
-
-        x = torch.cat([x2, x1], dim=1)
-        x = self.conv(x)
-        return x
 
 
 class BasicBlock(nn.Module):
@@ -98,13 +58,13 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False) # change
         self.bn1 = nn.BatchNorm2d(planes,affine = affine_par)
-        for i in self.bn1.parameters():
+	for i in self.bn1.parameters():
             i.requires_grad = False
         padding = 1
         if dilation_ == 2:
-            padding = 2
+	    padding = 2
         elif dilation_ == 4:
-            padding = 4
+	    padding = 4
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, # change
                                padding=padding, bias=False, dilation = dilation_)
         self.bn2 = nn.BatchNorm2d(planes,affine = affine_par)
@@ -144,20 +104,20 @@ class Bottleneck(nn.Module):
 
 class Classifier_Module(nn.Module):
 
-    def __init__(self,dilation_series,padding_series,NoLabels, in_channel=2048):
+    def __init__(self,dilation_series,padding_series,NoLabels):
         super(Classifier_Module, self).__init__()
-        self.conv2d_list = nn.ModuleList()
-        for dilation,padding in zip(dilation_series,padding_series):
-            self.conv2d_list.append(nn.Conv2d(in_channel,NoLabels,kernel_size=3,stride=1, padding =padding, dilation = dilation,bias = True))
+	self.conv2d_list = nn.ModuleList()
+	for dilation,padding in zip(dilation_series,padding_series):
+	    self.conv2d_list.append(nn.Conv2d(2048,NoLabels,kernel_size=3,stride=1, padding =padding, dilation = dilation,bias = True))
 
         for m in self.conv2d_list:
             m.weight.data.normal_(0, 0.01)
 
 
     def forward(self, x):
-        out = self.conv2d_list[0](x)
-        for i in range(len(self.conv2d_list)-1):
-            out += self.conv2d_list[i+1](x)
+	out = self.conv2d_list[0](x)
+	for i in range(len(self.conv2d_list)-1):
+	    out += self.conv2d_list[i+1](x)
         return out
 
 
@@ -177,7 +137,7 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=1, dilation__ = 2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1, dilation__ = 4)
-        self.layer5 = self._make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24],NoLabels)
+	self.layer5 = self._make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24],NoLabels)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -207,7 +167,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
     def _make_pred_layer(self,block, dilation_series, padding_series,NoLabels):
-        return block(dilation_series,padding_series,NoLabels)
+	return block(dilation_series,padding_series,NoLabels)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -223,9 +183,9 @@ class ResNet(nn.Module):
         return x
 
 class ResNet_ms(nn.Module):
-    def __init__(self, block, layers, in_channel=3):
+    def __init__(self, block, layers,NoLabels, in_channel=3):
         self.inplanes = 64
-        super(ResNet_ms, self).__init__()
+        super(ResNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channel, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(64,affine = affine_par)
@@ -237,7 +197,7 @@ class ResNet_ms(nn.Module):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=1, dilation__ = 2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1, dilation__ = 4)
-
+	self.layer5 = self._make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24],NoLabels)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -266,62 +226,21 @@ class ResNet_ms(nn.Module):
             layers.append(block(self.inplanes, planes,dilation_=dilation__))
 
         return nn.Sequential(*layers)
-
-
-    def forward(self, x):
-        x1 = self.conv1(x)
-        x1 = self.bn1(x1)
-        x1 = self.relu(x1)
-        x2 = self.maxpool(x1)
-        x2 = self.layer1(x2)
-        x3 = self.layer2(x2)
-        x4 = self.layer3(x3)
-        x5 = self.layer4(x4)
-
-        return [x1, x2, x3, x4, x5]
-
-class Encoder(nn.Module):
-    def __init__(self, in_channel=4):
-        super(Encoder, self).__init__()
-
-        #resnet = models.resnet50(pretrained=True)
-        resnet = models.resnet101(pretrained=True)
-        self.conv1 = nn.Conv2d(in_channel, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
-        
-        self.conv1.weight.data = torch.cat((resnet.conv1.weight.data, torch.FloatTensor(64, 1, 7, 7).normal_(0,0.0001)), 1)
-
-        self.bn1 = resnet.bn1
-        self.relu = resnet.relu
-        self.maxpool = resnet.maxpool
-
-        self.layer1 = resnet.layer1
-        self.layer2 = resnet.layer2
-        self.layer3 = resnet.layer3
-        self.layer4 = resnet.layer4
-
-        # freeze BNs
-        for m in self.modules():
-            if isinstance(m, nn.BatchNorm2d):
-                for p in m.parameters():
-                    p.requires_grad = False
-
-        self.register_buffer('mean', torch.FloatTensor([0.485, 0.456, 0.406, 0]).view(1, 4, 1, 1))
-        self.register_buffer('std', torch.FloatTensor([0.229, 0.224, 0.225, 0]).view(1, 4, 1, 1))
+    def _make_pred_layer(self,block, dilation_series, padding_series,NoLabels):
+	return block(dilation_series,padding_series,NoLabels)
 
     def forward(self, x):
-        #x = (x - self.mean) / self.std
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x0_5 = self.relu(x)
+        x0_25 = self.maxpool(x0_5)
+        x0_25 = self.layer1(x0_25)
+        x = self.layer2(x0_25)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x_pred = self.layer5(x)
 
-        x1 = self.conv1(x)
-        x1 = self.bn1(x1)
-        x1 = self.relu(x1)
-        x2 = self.maxpool(x1)
-        x2 = self.layer1(x2)
-        x3 = self.layer2(x2)
-        x4 = self.layer3(x3)
-        x5 = self.layer4(x4)
-
-        return [x1, x2, x3, x4, x5]
+        return [x0_5, x0_25, x, x_pred]
 
 
 class MS_Deeplab(nn.Module):
@@ -347,29 +266,35 @@ class MS_Deeplab(nn.Module):
         out.append(torch.max(temp1,x3Out_interp))
         return out
 
-class Deeplab_Encoder_Decoder(nn.Module):
+class MS_Deeplab3(nn.Module):
     def __init__(self,block,NoLabels):
-        super(Deeplab_Encoder_Decoder,self).__init__()
-        self.Scale = Encoder(4)
-        self.up1 = up(2048+1024, 1024)
-        self.up2 = up(1024+512, 512)
-        self.up3 = up(512+256, 256)
-        self.up4 = up(256+64, 64)
-        self.predict = self._make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24],NoLabels)
-        
-        
-    def _make_pred_layer(self,block, dilation_series, padding_series,NoLabels):
-        return block(dilation_series,padding_series,NoLabels, in_channel=64)
+        super(MS_Deeplab2,self).__init__()
+        self.Scale = ResNet_ms(block,[3, 4, 23, 3],NoLabels, in_channel=4)   #changed to fix #4 
+        self.conv1 = nn.Conv2d(in_channel, 64, kernel_size=7, stride=2, padding=3,
+                               bias=False)
+        self.bn1 = nn.BatchNorm2d(64,affine = affine_par)
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self,x):
         n, c, h, w = x.size()
-        x1, x2, x3, x4, x5 = self.Scale(x)
-        out = self.up1(x5, x4)
-        out = self.up2(out, x3)
-        out = self.up3(out, x2)
-        out = self.up4(out, x1)
-        out = self.predict(out)
+        self.interp1 = nn.UpsamplingBilinear2d(size = (  int(input_size*0.5)+1,  int(input_size*0.5)+1  ))
+        self.interp2 = nn.UpsamplingBilinear2d(size = (  int(input_size*0.25)+1,   int(input_size*0.25)+1   ))
+        x0_5, x0_25, x = self.Scale(x)
+        x_interp = self.interp2(x)
+        x_concat = torch.concat(x0_25, x_interp)
 
+        out = []
+        x2 = self.interp1(x)
+        x3 = self.interp2(x)
+        out.append(self.Scale(x))	# for original scale
+        out.append(self.interp3(self.Scale(x2)))	# for 0.75x scale
+        out.append(self.Scale(x3))	# for 0.5x scale
+
+
+        x2Out_interp = out[1]
+        x3Out_interp = self.interp3(out[2])
+        temp1 = torch.max(out[0],x2Out_interp)
+        out.append(torch.max(temp1,x3Out_interp))
         return out
 
 
@@ -380,8 +305,24 @@ class MS_Deeplab2(nn.Module):
 
     def forward(self,x):
         n, c, h, w = x.size()
-        out = self.Scale(x)	# for original scale
+        #self.interp1 = nn.Upsample(size = (  int(h*0.75)+1,  int(w*0.75)+1  ), mode='bilinear')
+        #self.interp2 = nn.Upsample(size = (  int(h*0.5)+1,   int(w*0.5)+1   ), mode='bilinear')
+        #self.interp3 = nn.Upsample(size = (  outS(h),   outS(w)   ), mode='bilinear')
+        out = []
+        #x2 = self.interp1(x)
+        #x3 = self.interp2(x)
+        out.append(0)
+        out.append(0)
+        out.append(0)
+        out.append(self.Scale(x))	# for original scale
+        #out.append(self.interp3(self.Scale(x2)))	# for 0.75x scale
+        #out.append(self.Scale(x3))	# for 0.5x scale
 
+
+        #x2Out_interp = out[1]
+        #x3Out_interp = self.interp3(out[2])
+        #temp1 = torch.max(out[0],x2Out_interp)
+        #out.append(torch.max(temp1,x3Out_interp))
         return out
 
 def Res_Deeplab(NoLabels=21):
@@ -390,9 +331,5 @@ def Res_Deeplab(NoLabels=21):
 
 def Res_Deeplab_4chan(NoLabels=21):
     model = MS_Deeplab2(Bottleneck,NoLabels)
-    return model
-
-def Deep_EncoderDecoder(NoLabels=2):
-    model = Deeplab_Encoder_Decoder(Bottleneck, NoLabels)
     return model
 
