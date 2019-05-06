@@ -6,7 +6,7 @@ from os.path import join
 import numpy as np
 
 import cv2
-from custom_transforms import aug_batch
+from .custom_transforms import aug_batch
 from PIL import Image
 import matplotlib.pyplot as plt
 

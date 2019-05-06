@@ -19,7 +19,7 @@ def outS(i):
     j = (j+1)/2
     j = int(np.ceil((j+1)/2.0))
     j = (j+1)/2
-    return j
+    return int(j)
 
 def resize_label_batch(label, size):
     label_resized = np.zeros((size,size,1,label.shape[3]))

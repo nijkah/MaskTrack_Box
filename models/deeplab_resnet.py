@@ -58,13 +58,13 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False) # change
         self.bn1 = nn.BatchNorm2d(planes,affine = affine_par)
-	for i in self.bn1.parameters():
+        for i in self.bn1.parameters():
             i.requires_grad = False
         padding = 1
         if dilation_ == 2:
-	    padding = 2
+            padding = 2
         elif dilation_ == 4:
-	    padding = 4
+            padding = 4
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, # change
                                padding=padding, bias=False, dilation = dilation_)
         self.bn2 = nn.BatchNorm2d(planes,affine = affine_par)
@@ -106,18 +106,18 @@ class Classifier_Module(nn.Module):
 
     def __init__(self,dilation_series,padding_series,NoLabels):
         super(Classifier_Module, self).__init__()
-	self.conv2d_list = nn.ModuleList()
-	for dilation,padding in zip(dilation_series,padding_series):
-	    self.conv2d_list.append(nn.Conv2d(2048,NoLabels,kernel_size=3,stride=1, padding =padding, dilation = dilation,bias = True))
+        self.conv2d_list = nn.ModuleList()
+        for dilation,padding in zip(dilation_series,padding_series):
+            self.conv2d_list.append(nn.Conv2d(2048,NoLabels,kernel_size=3,stride=1, padding =padding, dilation = dilation,bias = True))
 
         for m in self.conv2d_list:
             m.weight.data.normal_(0, 0.01)
 
 
     def forward(self, x):
-	out = self.conv2d_list[0](x)
-	for i in range(len(self.conv2d_list)-1):
-	    out += self.conv2d_list[i+1](x)
+        out = self.conv2d_list[0](x)
+        for i in range(len(self.conv2d_list)-1):
+            out += self.conv2d_list[i+1](x)
         return out
 
 
@@ -137,7 +137,7 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=1, dilation__ = 2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1, dilation__ = 4)
-	self.layer5 = self._make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24],NoLabels)
+        self.layer5 = self._make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24],NoLabels)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -167,7 +167,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
     def _make_pred_layer(self,block, dilation_series, padding_series,NoLabels):
-	return block(dilation_series,padding_series,NoLabels)
+        return block(dilation_series,padding_series,NoLabels)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -197,7 +197,7 @@ class ResNet_ms(nn.Module):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=1, dilation__ = 2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1, dilation__ = 4)
-	self.layer5 = self._make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24],NoLabels)
+        self.layer5 = self._make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24],NoLabels)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -227,7 +227,7 @@ class ResNet_ms(nn.Module):
 
         return nn.Sequential(*layers)
     def _make_pred_layer(self,block, dilation_series, padding_series,NoLabels):
-	return block(dilation_series,padding_series,NoLabels)
+        return block(dilation_series,padding_series,NoLabels)
 
     def forward(self, x):
         x = self.conv1(x)
