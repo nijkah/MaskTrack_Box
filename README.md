@@ -1,13 +1,18 @@
 # MaskTrack_Box
 
-This is simplified MaskTrack_Box implementation in pytorch.
+This is simplified [MaskTrack_Box](https://arxiv.org/abs/1612.02646) implementation in pytorch.
 
+Compared to conventional semi-supervised video object segmentation models,
 MaskTrack_Box requires only a bounding box of the target for video object segmentation.
-Althohugh original MaskTrack_Box consists of two model(1. model extracting mask from box 2. Mask propagation model),
+
+Althohugh original MaskTrack_Box consists of two models(1. model extracting a mask from the box 2. Mask propagation model),
 I simplified the models into one.
 
-- The deformation method is simplified by imgaug library.
-- Test code does not include fine-tuning as necessary.
+### Main differences between this project and original paper
+- Model is just one, whereas Masktrack_box in the paper consists of two models.
+- The deformation method is simplified by imgaug library, running on-the-fly.
+
+* I added fine-tuning code, but this is not necessary to evaluate.
 
 ## Environment setup
 All the code has been tested on Ubuntu 16.04, python3.6, Pytorch0.4.1, CUDA 9.0, GTX TITAN x GPU
@@ -31,22 +36,22 @@ cd data
 sh download_datasets.sh
 cd ..
 ```
+and you can download the pre-trained deeplab model from
+[here](https://drive.google.com/file/d/0BxhUwxvLPO7TeXFNQ3YzcGI4Rjg/view).
 
+Put this model in 'data' folder.
 
+- train the model
+```
+cd train
+python train.py
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+- evaluate the model
+```
+cd test
+python test.py
+```
 
 
 
@@ -61,4 +66,8 @@ The original paper is
 }
 ```
 
-The original base code is borrowed from https://github.com/isht7/pytorch-deeplab-resnet.
+## Acknowledgement
+The original base code is borrowed from
+[https://github.com/isht7/pytorch-deeplab-resnet](https://github.com/isht7/pytorch-deeplab-resnet).
+
+This project is inspired by [https://github.com/omkar13/MaskTrack](https://github.com/omkar13/MaskTrack)
