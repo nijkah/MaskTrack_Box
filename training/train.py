@@ -196,7 +196,6 @@ for epoch in range(0, 20):
         if iter % 1000 == 0 and iter!=0:
             print('taking snapshot ...')
             iou = test_model(model, save=True)
-            iou =0
             numerics['acc'].append(iou)
             torch.save(model.state_dict(),'../data/snapshots/box-'+str(iter)+'.pth')
             with open('../data/losses/box-'+str(iter)+'.json', 'w') as f:

@@ -19,7 +19,7 @@ from dataloader.datasets import DAVIS2016
 import json
 from evaluation.finetuning import finetune
 
-davis_path = '/home/hakjine/datasets/DAVIS/DAVIS-2016/DAVIS'
+davis_path = '/home/hakjinlee/datasets/DAVIS/DAVIS-2016/DAVIS'
 im_path = os.path.join(davis_path, 'JPEGImages/480p')
 gt_path = os.path.join(davis_path, 'Annotations/480p')
 
@@ -36,12 +36,13 @@ Options:
     --testGTpath=<str>          Ground truth path prefix [default: data/gt/]
     --testIMpath=<str>          Sketch images path prefix [default: data/img/]
     --NoLabels=<int>            The number of different labels in training data, VOC has 21 labels, including background [default: 21]
-    --gpu0=<int>                GPU number [default: 0]
+    --gpu=<int>                GPU number [default: 4]
 """
 
-args = docopt(docstr, version='v0.1')
-#print args
-gpu0 = 0
+args = docopt(docstr, version='v0.9')
+print(args)
+num_gpu = int(args['--gpu'])
+torch.cuda.set_device(num_gpu)
 
 max_label = int(args['--NoLabels'])-1 # labels from 0,1, ... 20(for VOC) 
 
@@ -90,7 +91,7 @@ def test_model(model, vis=False, save=True):
 
 
 
-            output = model(torch.FloatTensor(np.expand_dims(img, 0).transpose(0,3,1,2)).cuda(gpu0))
+            output = model(torch.FloatTensor(np.expand_dims(img, 0).transpose(0,3,1,2)).cuda())
             interp = nn.UpsamplingBilinear2d(size=(h, w))
             #output = output[3][0].data.cpu().numpy()
             output = interp(output).data.cpu().numpy().squeeze()
