@@ -4,15 +4,9 @@ import torch.utils.model_zoo as model_zoo
 import torch
 from torch.nn import functional as F
 import numpy as np
+
 affine_par = True
 
-
-def outS(i):
-    i = int(i)
-    i = (i+1)/2
-    i = int(np.ceil((i+1)/2.0))
-    i = (i+1)/2
-    return i
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -243,9 +237,9 @@ class ResNet_ms(nn.Module):
         return [x0_5, x0_25, x, x_pred]
 
 
-class MS_Deeplab(nn.Module):
+class MS_Deeplab_ms(nn.Module):
     def __init__(self,block,NoLabels):
-        super(MS_Deeplab,self).__init__()
+        super(MS_Deeplab_ms,self).__init__()
         self.Scale = ResNet(block,[3, 4, 23, 3],NoLabels, in_channel=3)   #changed to fix #4 
 
     def forward(self,x):
@@ -266,70 +260,25 @@ class MS_Deeplab(nn.Module):
         out.append(torch.max(temp1,x3Out_interp))
         return out
 
-class MS_Deeplab3(nn.Module):
+class MS_Deeplab_cs(nn.Module):
     def __init__(self,block,NoLabels):
-        super(MS_Deeplab2,self).__init__()
-        self.Scale = ResNet_ms(block,[3, 4, 23, 3],NoLabels, in_channel=4)   #changed to fix #4 
-        self.conv1 = nn.Conv2d(in_channel, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
-        self.bn1 = nn.BatchNorm2d(64,affine = affine_par)
-        self.relu = nn.ReLU(inplace=True)
-
-    def forward(self,x):
-        n, c, h, w = x.size()
-        self.interp1 = nn.UpsamplingBilinear2d(size = (  int(input_size*0.5)+1,  int(input_size*0.5)+1  ))
-        self.interp2 = nn.UpsamplingBilinear2d(size = (  int(input_size*0.25)+1,   int(input_size*0.25)+1   ))
-        x0_5, x0_25, x = self.Scale(x)
-        x_interp = self.interp2(x)
-        x_concat = torch.concat(x0_25, x_interp)
-
-        out = []
-        x2 = self.interp1(x)
-        x3 = self.interp2(x)
-        out.append(self.Scale(x))	# for original scale
-        out.append(self.interp3(self.Scale(x2)))	# for 0.75x scale
-        out.append(self.Scale(x3))	# for 0.5x scale
-
-
-        x2Out_interp = out[1]
-        x3Out_interp = self.interp3(out[2])
-        temp1 = torch.max(out[0],x2Out_interp)
-        out.append(torch.max(temp1,x3Out_interp))
-        return out
-
-
-class MS_Deeplab2(nn.Module):
-    def __init__(self,block,NoLabels):
-        super(MS_Deeplab2,self).__init__()
+        super(MS_Deeplab_cs,self).__init__()
         self.Scale = ResNet(block,[3, 4, 23, 3],NoLabels, in_channel=4)   #changed to fix #4 
 
-    def forward(self,x):
-        n, c, h, w = x.size()
-        #self.interp1 = nn.Upsample(size = (  int(h*0.75)+1,  int(w*0.75)+1  ), mode='bilinear')
-        #self.interp2 = nn.Upsample(size = (  int(h*0.5)+1,   int(w*0.5)+1   ), mode='bilinear')
-        #self.interp3 = nn.Upsample(size = (  outS(h),   outS(w)   ), mode='bilinear')
-        out = []
-        #x2 = self.interp1(x)
-        #x3 = self.interp2(x)
-        out.append(0)
-        out.append(0)
-        out.append(0)
-        out.append(self.Scale(x))	# for original scale
-        #out.append(self.interp3(self.Scale(x2)))	# for 0.75x scale
-        #out.append(self.Scale(x3))	# for 0.5x scale
+        self.register_buffer('mean', torch.FloatTensor([0.485, 0.456, 0.406, 0]).view(1,4,1,1))
+        self.register_buffer('std', torch.FloatTensor([0.229, 0.224, 0.225, 0.358]).view(1,4,1,1))
 
+    def forward(self, x):
+        x = (x - self.mean) / self.std
+        out = self.Scale(x)
 
-        #x2Out_interp = out[1]
-        #x3Out_interp = self.interp3(out[2])
-        #temp1 = torch.max(out[0],x2Out_interp)
-        #out.append(torch.max(temp1,x3Out_interp))
         return out
 
 def Res_Deeplab(NoLabels=21):
-    model = MS_Deeplab(Bottleneck,NoLabels)
+    model = MS_Deeplab_ms(Bottleneck,NoLabels)
     return model
 
 def Res_Deeplab_4chan(NoLabels=21):
-    model = MS_Deeplab2(Bottleneck,NoLabels)
+    model = MS_Deeplab_cs(Bottleneck, NoLabels)
     return model
 

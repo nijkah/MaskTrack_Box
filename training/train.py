@@ -43,7 +43,7 @@ Options:
     -b, --batchSize=<int>       Num sample per batch [default: 12]
     --wtDecay=<float>           Weight decay during training [default: 0.0005]
     --gpu=<int>                GPU number [default: 4]
-    --maxIter=<int>             Maximum number of iterations [default: 50000]
+    --maxIter=<int>             Maximum number of iterations [default: 40000]
 """
 
 args = docopt(docstr, version='v0.9')
@@ -100,10 +100,7 @@ def vis(img, gt, out):
 
     plt.ion()
     plt.subplot(2, 2, 1)
-    im = img.data.cpu().numpy()[:3, :, :].transpose(1, 2, 0)
-    im[:,:,0] += 104.000699
-    im[:,:,1] += 116.66877
-    im[:,:,2] += 122.67892
+    im = img.data.cpu().numpy()[:3, :, :].transpose(1, 2, 0)*255
     #gt = gt[:,:,:,0]
     #out = out.data.cpu().numpy().transpose(1, 2, 0)
     out = out.data.cpu().numpy()
@@ -137,8 +134,11 @@ for i in saved_state_dict:
         saved_state_dict[i] = model.state_dict()[i]
     if i_parts[1] == 'conv1':
         saved_state_dict[i] = torch.cat((saved_state_dict[i], torch.FloatTensor(64, 1, 7, 7).normal_(0,0.0001)), 1)
+model_dict = model.state_dict()
+saved_state_dict = {k: v for k, v in saved_state_dict.items() if k in model_dict}
+model_dict.update(saved_state_dict)
 
-model.load_state_dict(saved_state_dict)
+model.load_state_dict(model_dict)
 
 
 max_iter = int(args['--maxIter']) 
@@ -176,8 +176,7 @@ for epoch in range(0, 20):
 
 
         out = model(images)
-        #loss = loss_calc(out[0], label[0],)
-        loss = cross_entropy_loss_weighted(out[3], label.cuda())
+        loss = cross_entropy_loss_weighted(out, label.cuda())
         numerics['loss'].append(float(loss.data.cpu().numpy()))
         loss.backward()
 
@@ -186,7 +185,7 @@ for epoch in range(0, 20):
 
     
         #if iter % 10 == 0:
-        #    vis(images[0], label[0], out[-1][0])
+        #    vis(images[0], label[0], out[0])
 
         optimizer.step()
         lr_ = lr_poly(base_lr,iter,max_iter,0.9)
@@ -196,7 +195,7 @@ for epoch in range(0, 20):
 
         if iter % 1000 == 0 and iter!=0:
             print('taking snapshot ...')
-            iou = test_ms4chan.test(model, save=True)
+            iou = test_model(model, save=True)
             iou =0
             numerics['acc'].append(iou)
             torch.save(model.state_dict(),'../data/snapshots/box-'+str(iter)+'.pth')

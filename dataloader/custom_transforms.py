@@ -81,10 +81,8 @@ def aug_batch(img, gt):
     gt_temp = flip(gt,flip_p)
 
     seq_det = seq.to_deterministic()
-    img_temp = seq_det.augment_image(img_temp).astype(float)
-    img_temp[:,:,0] = img_temp[:,:,0] - 104.00699
-    img_temp[:,:,1] = img_temp[:,:,1] - 116.66877
-    img_temp[:,:,2] = img_temp[:,:,2] - 122.67892
+    img_temp = seq_det.augment_image(img_temp)
+    img_temp = cv2.cvtColor(img_temp, cv2.COLOR_BGR2RGB).astype(float)/255.
     img_temp = cv2.resize(img_temp,(dim,dim))
 
     gt_temp = ia.SegmentationMapOnImage(gt_temp, shape=gt_temp.shape, nb_classes=2)
@@ -98,16 +96,16 @@ def aug_batch(img, gt):
     bb = cv2.boundingRect(gt_temp.astype('uint8'))
  
     if bb[2] != 0 and bb[3] != 0:
-        fc = np.ones([dim, dim, 1]) * -100
+        fc = np.ones([dim, dim, 1]) * -100/255.
         #fc[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2], 0] = 100
         if flip_p <= 1.0:
             aug_p = random.uniform(0, 1)
             it = random.randint(1, 5)
 
             aug = np.expand_dims(cv2.dilate(mask, kernel, iterations=it), 2)
-            fc[np.where(aug==1)] = 100 
+            fc[np.where(aug==1)] = 100/255.
     else:
-        fc = np.ones([dim, dim, 1]) * -100
+        fc = np.ones([dim, dim, 1]) * -100/255.
     
     image = np.dstack([img_temp, fc])
     gt_temp = np.expand_dims(gt_temp, 2)
