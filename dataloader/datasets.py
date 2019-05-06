@@ -70,7 +70,8 @@ class DAVIS(data.Dataset):
         img = cv2.imread(self.image_list[index])
         
 
-        gt = np.expand_dims(np.array(Image.open(self.gt_list[index])), axis=2)
+        #gt = np.expand_dims(np.array(Image.open(self.gt_list[index])), axis=2)
+        gt = np.expand_dims(cv2.imread(self.gt_list[index], 0), axis=2)
         gt[gt==255] = 1
 
 

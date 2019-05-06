@@ -89,14 +89,11 @@ def aug_batch(img, gt):
 
     gt_temp = ia.SegmentationMapOnImage(gt_temp, shape=gt_temp.shape, nb_classes=2)
     gt_temp_map = seq_det.augment_segmentation_maps([gt_temp])[0]
-    gt_temp = gt_temp_map.get_arr_int()
-    gt_temp = cv2.resize(gt_temp,(321,321) , interpolation = cv2.INTER_NEAREST).astype(float)
+    gt_temp = gt_temp_map.get_arr_int().astype(float)
+    mask = seq2.augment_segmentation_maps([gt_temp_map])[0].get_arr_int()
+    mask = cv2.resize(mask,(dim,dim) , interpolation = cv2.INTER_NEAREST).astype(float)
 
     kernel = np.ones((int(scale*5), int(scale*5)), np.uint8)
-
-    
-    mask = seq2.augment_segmentation_maps([gt_temp_map])[0].get_arr_int()
-    mask= cv2.resize(mask,(dim,dim) , interpolation = cv2.INTER_NEAREST).astype(float)
     
     bb = cv2.boundingRect(gt_temp.astype('uint8'))
  
