@@ -25,7 +25,7 @@ git clone https://github.com/nijkah/masktrack_box.git && cd masktrack_box
 - Setup python environment
 ```
 conda create -n masktrack_box python=3.6
-source activate siammask
+source activate masktrack_box 
 conda install pytorch-0.4.1 cu90 -c pytorch
 pip install -r requirments.txt
 ```
