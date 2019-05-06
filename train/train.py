@@ -220,11 +220,11 @@ for epoch in range(0, 20):
 
         if iter % 1000 == 0 and iter!=0:
             print('taking snapshot ...')
-            #iou = test_ms4chan.test(model, save=True)
+            iou = test_ms4chan.test(model, save=True)
             iou =0
             numerics['acc'].append(iou)
-            torch.save(model.state_dict(),'data/snapshots/box-'+str(iter)+'.pth')
-            with open('./losses/box-'+str(iter)+'.json', 'w') as f:
+            torch.save(model.state_dict(),'../data/snapshots/box-'+str(iter)+'.pth')
+            with open('../data/losses/box-'+str(iter)+'.json', 'w') as f:
                 json.dump(numerics, f)
 
 end = timeit.timeit()
