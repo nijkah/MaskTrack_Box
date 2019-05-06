@@ -2,11 +2,11 @@
 
 This is simplified [MaskTrack_Box](https://arxiv.org/abs/1612.02646) implementation in pytorch.
 
-Compared to conventional semi-supervised video object segmentation models,
+Compared to conventional semi-supervised video object segmentation methods,
 MaskTrack_Box requires only a bounding box of the target for video object segmentation.
 
-Althohugh original MaskTrack_Box consists of two models(1. model extracting a mask from the box 2. Mask propagation model),
-I simplified the models into one.
+Althohugh original MaskTrack_Box consists of two models(1. Model extracting a mask from the box 2. Mask propagation model),
+I simplified these models into one.
 
 ### Main differences between this project and original paper
 - Model is just one, whereas Masktrack_box in the paper consists of two models.
@@ -24,7 +24,7 @@ git clone https://github.com/nijkah/masktrack_box.git && cd masktrack_box
 
 - Setup python environment
 ```
-conda create -n masktrack_box python=3.5
+conda create -n masktrack_box python=3.6
 source activate siammask
 conda install pytorch-0.4.1 cu90 -c pytorch
 pip install -r requirments.txt
@@ -38,8 +38,7 @@ cd ..
 ```
 and you can download the pre-trained deeplab model from
 [here](https://drive.google.com/file/d/0BxhUwxvLPO7TeXFNQ3YzcGI4Rjg/view).
-
-Put this model in 'data' folder.
+Put this in the 'data' folder.
 
 - train the model
 ```
@@ -70,4 +69,4 @@ The original paper is
 The original base code is borrowed from
 [https://github.com/isht7/pytorch-deeplab-resnet](https://github.com/isht7/pytorch-deeplab-resnet).
 
-This project is inspired by [https://github.com/omkar13/MaskTrack](https://github.com/omkar13/MaskTrack)
+This project is inspired by [https://github.com/omkar13/MaskTrack](https://github.com/omkar13/MaskTrack).
