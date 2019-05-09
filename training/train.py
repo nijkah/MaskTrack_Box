@@ -38,12 +38,12 @@ Usage:
     train.py [options]
 
 Options:
-    --NoLabels=<int>            The number of from custom_transforms import aug_batchfferent labels in training data, VOC has 21 labels, including background [default: 2]
-    --lr=<float>                Learning Rate from custom_transforms import aug_batch [default: 0.001]
+    --NoLabels=<int>            The number of labels in training data, foreground and background  [default: 2]
+    --lr=<float>                Learning Rate [default: 0.001]
     -b, --batchSize=<int>       Num sample per batch [default: 12]
     --wtDecay=<float>           Weight decay during training [default: 0.0005]
-    --gpu=<int>                GPU number [default: 4]
-    --maxIter=<int>             Maximum number of iterations [default: 40000]
+    --gpu=<int>                 GPU number [default: 0]
+    --maxIter=<int>             Maximum number of iterations [default: 20000]
 """
 
 args = docopt(docstr, version='v0.9')

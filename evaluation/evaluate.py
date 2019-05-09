@@ -32,11 +32,8 @@ Usage:
 Options:
     -h, --help                  Print this message
     --visualize                 view outputs of each sketch
-    --snapPrefix=<str>          Snapshot [default: VOC12_scenes_]
-    --testGTpath=<str>          Ground truth path prefix [default: data/gt/]
-    --testIMpath=<str>          Sketch images path prefix [default: data/img/]
-    --NoLabels=<int>            The number of different labels in training data, VOC has 21 labels, including background [default: 21]
-    --gpu=<int>                GPU number [default: 4]
+    --NoLabels=<int>            The number of different labels in training data, foreground and background [default: 21]
+    --gpu=<int>                 GPU number [default: 0]
 """
 
 args = docopt(docstr, version='v0.9')
@@ -44,17 +41,11 @@ print(args)
 num_gpu = int(args['--gpu'])
 torch.cuda.set_device(num_gpu)
 
-max_label = int(args['--NoLabels'])-1 # labels from 0,1, ... 20(for VOC) 
-
-
 def test_model(model, vis=False, save=True):
     model.eval()
     val_seqs = np.loadtxt(os.path.join(davis_path, 'val_seqs.txt'), dtype=str).tolist()
     dumps = OrderedDict()
-    #val_seqs = np.loadtxt(os.path.join(davis_path, 'train_seqs.txt'), dtype=str).tolist()
 
-
-    #hist = np.zeros((max_label+1, max_label+1))
     pytorch_list = []
     tiou = 0
     for seq in val_seqs:
@@ -79,28 +70,21 @@ def test_model(model, vis=False, save=True):
             gt_original[gt_original==255] = 1   
             gt = cv2.resize(gt_original, (w, h), interpolation=cv2.INTER_NEAREST)
             if idx == 0:
-                #model = finetune(model, img_original, gt_original)
 
                 fc = np.ones([h, w, 1], dtype=float) *-100
                 bb = cv2.boundingRect(gt.astype('uint8'))
                 fc[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2], 0] = 100
-                #fc[np.where(gt==1)] = 100
-                #fc += np.expand_dims(gt, 2)
-                #fc[fc==1] = 100
             img = np.dstack([img_temp, fc])
 
 
 
             output = model(torch.FloatTensor(np.expand_dims(img, 0).transpose(0,3,1,2)).cuda())
             interp = nn.UpsamplingBilinear2d(size=(h, w))
-            #output = output[3][0].data.cpu().numpy()
             output = interp(output).data.cpu().numpy().squeeze()
-            #output = output[:,:img_temp.shape[0],:img_temp.shape[1]]
             
             output = output.transpose(1,2,0)
             output = np.argmax(output,axis = 2)
 
-            #upsampled_output = cv2.resize(np.expand_dims(output,2), (ow, oh))
             upsampled_output = cv2.resize(output.astype(np.float32), (ow, oh))
             upsampled_output[upsampled_output > 0.5] = 1
             upsampled_output[upsampled_output != 1] = 0
@@ -126,8 +110,6 @@ def test_model(model, vis=False, save=True):
             fc = np.ones([h, w, 1], dtype=float) * -100
             bb = cv2.boundingRect(output.astype('uint8'))
             if bb[2] != 0 and bb[3] != 0:
-                #fc[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2], 0] = 100
-                #erode = cv2.erode(output, kernel, iterations=3)
                 fc[np.where(output==1)] = 100
 
             if save:
@@ -135,29 +117,28 @@ def test_model(model, vis=False, save=True):
                 folder = os.path.join(save_path, i.split('/')[0])
                 if not os.path.isdir(folder):
                     os.makedirs(folder)
-                #Image.fromarray(output.astype(int)).save(os.path.join('Results', i+'.png'))
-                cv2.imwrite(os.path.join(save_path, i+'.png'),output)
+                cv2.imwrite(os.path.join(save_path, i+'.png'),output*255)
             seq_iou += iou
 
         print(seq, seq_iou/len(img_list))
         dumps[seq] = seq_iou/len(img_list)
         tiou += seq_iou/len(img_list)
-    #miou = np.diag(hist) / (hist.sum(1) + hist.sum(0) - np.diag(hist))
-    #print 'pytorch',iter,"Mean iou = ",np.sum(miou)/len(miou)
-    model.train()
+
     dumps['t mIoU'] = tiou/len(val_seqs)
     with open('result.json', 'w') as f:
         json.dump(dumps, f, indent=2)
 
+    model.train()
+
     return tiou/len(val_seqs)
 
 if __name__ == '__main__':
-    model = deeplab_resnet.Res_Deeplab_4chan(2)
+    model = deeplab_resnet.Res_Deeplab_4chan(int(args['--NoLabels']))
     #model = deeplab_resnet.Deep_EncoderDecoder(2)
     #state_dict = torch.load('data/snapshots/DAVIS16-20000.pth')
     state_dict = torch.load('../data/snapshots/trained_masktrack_box.pth')
     model.load_state_dict(state_dict)
     model = model.cuda()
     model.eval()
-    res = test(model, vis=False)
+    res = test(model, vis=args['--visualize'])
     print(res)
