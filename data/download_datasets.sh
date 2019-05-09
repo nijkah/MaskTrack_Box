@@ -18,7 +18,7 @@ wget http://mftp.mmcheng.net/Data/MSRA10K_Imgs_GT.zip
 unzip MSRA10K_Imgs_GT.zip
 mkdir images
 mkdir annotations
-mv MSRA10K__Imgs_GT/Imgs/*.jpg images
-mv MSRA10K__Imgs_GT/Imgs/*.png annotations 
+mv MSRA10K_Imgs_GT/Imgs/*.jpg images
+mv MSRA10K_Imgs_GT/Imgs/*.png annotations 
 
 cd ..
