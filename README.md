@@ -47,13 +47,13 @@ python train.py
 ```
 
 - evaluate the model
-You can download the trained MaskTrack_Box model from
-[here](https://www.dropbox.com/s/0cp69ijubgr20m4/trained_masktrack_box.pth?dl=0).
-Put this in the 'data/snapshots' folder.
 ```
 cd evaluatation
 python evaluate.py
 ```
+You can download the trained MaskTrack_Box model from
+[here](https://www.dropbox.com/s/0cp69ijubgr20m4/trained_masktrack_box.pth?dl=0).
+Put this in the 'data/snapshots' folder.
 
 ## Results
 |         Model         | DAVIS2016 mean IoU |
