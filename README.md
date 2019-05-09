@@ -55,6 +55,11 @@ cd evaluatation
 python evaluate.py
 ```
 
+## Results
+|         Model         | DAVIS2016 mean IoU |
+|:---------------------:|:------------------:|
+|  Paper MaskTrack_box  |        69.6        |
+| This (No fine-tuning) |        65.4        |
 
 
 ## Citations
