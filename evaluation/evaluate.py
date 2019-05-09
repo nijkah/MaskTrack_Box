@@ -8,8 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
+sys.path.append('..')
 
 from models import deeplab_resnet 
 from collections import OrderedDict
@@ -32,7 +31,7 @@ Usage:
 Options:
     -h, --help                  Print this message
     --visualize                 view outputs of each sketch
-    --NoLabels=<int>            The number of different labels in training data, foreground and background [default: 21]
+    --NoLabels=<int>            The number of different labels in video object segmentation, foreground and background [default: 2]
     --gpu=<int>                 GPU number [default: 0]
 """
 
@@ -41,12 +40,14 @@ print(args)
 num_gpu = int(args['--gpu'])
 torch.cuda.set_device(num_gpu)
 
+max_label = int(args['--NoLabels'])-1 # labels from 0,1, ... 20(for VOC) 
+
+
 def test_model(model, vis=False, save=True):
     model.eval()
     val_seqs = np.loadtxt(os.path.join(davis_path, 'val_seqs.txt'), dtype=str).tolist()
     dumps = OrderedDict()
 
-    pytorch_list = []
     tiou = 0
     for seq in val_seqs:
         seq_path = os.path.join(im_path, seq)
@@ -57,10 +58,7 @@ def test_model(model, vis=False, save=True):
 
             img_original = cv2.imread(os.path.join(im_path,i+'.jpg'))
             img_original = cv2.cvtColor(img_original, cv2.COLOR_BGR2RGB)
-            img_temp = img_original.copy().astype(float)
-            img_temp[:,:,2] -= 104.00699
-            img_temp[:,:,1] -= 116.66877
-            img_temp[:,:,0] -= 122.67892
+            img_temp = img_original.copy().astype(float)/255.
             oh, ow, oc = img_original.shape
             img_temp= cv2.resize(img_temp, (321, 321))
             h, w, c = img_temp.shape
@@ -69,14 +67,13 @@ def test_model(model, vis=False, save=True):
             gt_original = cv2.imread(os.path.join(gt_path,i+'.png'),0)
             gt_original[gt_original==255] = 1   
             gt = cv2.resize(gt_original, (w, h), interpolation=cv2.INTER_NEAREST)
+
             if idx == 0:
-
-                fc = np.ones([h, w, 1], dtype=float) *-100
+                fc = np.ones([h, w, 1], dtype=float) *-100/255.
                 bb = cv2.boundingRect(gt.astype('uint8'))
-                fc[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2], 0] = 100
+                fc[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2], 0] = 100/255.
+
             img = np.dstack([img_temp, fc])
-
-
 
             output = model(torch.FloatTensor(np.expand_dims(img, 0).transpose(0,3,1,2)).cuda())
             interp = nn.UpsamplingBilinear2d(size=(h, w))
@@ -98,19 +95,17 @@ def test_model(model, vis=False, save=True):
                 plt.subplot(2, 2, 2)
                 plt.imshow(fc.squeeze())
                 plt.subplot(2, 2, 3)
-                #plt.imshow(gt)
                 plt.imshow(gt_original)
                 plt.subplot(2, 2, 4)
-                #plt.imshow(output)
                 plt.imshow(upsampled_output)
                 plt.show()
                 plt.pause(0.01)
                 plt.clf()
 
-            fc = np.ones([h, w, 1], dtype=float) * -100
+            fc = np.ones([h, w, 1], dtype=float) * -100/255.
             bb = cv2.boundingRect(output.astype('uint8'))
             if bb[2] != 0 and bb[3] != 0:
-                fc[np.where(output==1)] = 100
+                fc[np.where(output==1)] = 100/255.
 
             if save:
                 save_path = '../data/save/Result_masktrack'
@@ -129,16 +124,13 @@ def test_model(model, vis=False, save=True):
         json.dump(dumps, f, indent=2)
 
     model.train()
-
     return tiou/len(val_seqs)
 
 if __name__ == '__main__':
     model = deeplab_resnet.Res_Deeplab_4chan(int(args['--NoLabels']))
-    #model = deeplab_resnet.Deep_EncoderDecoder(2)
-    #state_dict = torch.load('data/snapshots/DAVIS16-20000.pth')
     state_dict = torch.load('../data/snapshots/trained_masktrack_box.pth')
     model.load_state_dict(state_dict)
     model = model.cuda()
     model.eval()
-    res = test(model, vis=args['--visualize'])
+    res = test_model(model, vis=args['--visualize'])
     print(res)
