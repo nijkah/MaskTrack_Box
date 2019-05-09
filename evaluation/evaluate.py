@@ -155,7 +155,7 @@ if __name__ == '__main__':
     model = deeplab_resnet.Res_Deeplab_4chan(2)
     #model = deeplab_resnet.Deep_EncoderDecoder(2)
     #state_dict = torch.load('data/snapshots/DAVIS16-20000.pth')
-    state_dict = torch.load('../data/snapshots/masktrack-20000.pth')
+    state_dict = torch.load('../data/snapshots/trained_masktrack_box.pth')
     model.load_state_dict(state_dict)
     model = model.cuda()
     model.eval()
