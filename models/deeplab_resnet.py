@@ -55,10 +55,9 @@ class Bottleneck(nn.Module):
         for i in self.bn1.parameters():
             i.requires_grad = False
         padding = 1
-        if dilation_ == 2:
-            padding = 2
-        elif dilation_ == 4:
-            padding = 4
+        if dilation_ != 1:
+            padding = dilation_
+
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, # change
                                padding=padding, bias=False, dilation = dilation_)
         self.bn2 = nn.BatchNorm2d(planes,affine = affine_par)
@@ -71,8 +70,6 @@ class Bottleneck(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
-
-
 
     def forward(self, x):
         residual = x
@@ -113,7 +110,6 @@ class Classifier_Module(nn.Module):
         for i in range(len(self.conv2d_list)-1):
             out += self.conv2d_list[i+1](x)
         return out
-
 
 
 class ResNet(nn.Module):

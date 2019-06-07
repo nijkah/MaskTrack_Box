@@ -1,20 +1,72 @@
 import os
 import numpy as np
-from PIL import Image
-from collections import OrderedDict
 import cv2
 
-overlay_color = [255, 0, 0]
-transparency = 0.6
-result_path = './DAVIS-template-'
+def lr_poly(base_lr, iter,max_iter,power):
+    return base_lr*((1-float(iter)/max_iter)**(power))
 
+
+def get_1x_lr_params_NOscale(model):
+    """
+    This generator returns all the parameters of the net except for 
+    the last classification layer. Note that for each batchnorm layer, 
+    requires_grad is set to False in deeplab_resnet.py, therefore this function does not return 
+    any batchnorm parameter
+    """
+    b = []
+
+    b.append(model.Scale.conv1)
+    b.append(model.Scale.bn1)
+    b.append(model.Scale.layer1)
+    b.append(model.Scale.layer2)
+    b.append(model.Scale.layer3)
+    b.append(model.Scale.layer4)
+
+    
+    for i in range(len(b)):
+        for j in b[i].modules():
+            jj = 0
+            for k in j.parameters():
+                jj+=1
+                if k.requires_grad:
+                    yield k
+
+def get_10x_lr_params(model):
+    """
+    This generator returns all the parameters for the last layer of the net,
+    which does the classification of pixel into classes
+    """
+
+    b = []
+    b.append(model.Scale.layer5.parameters())
+
+    for j in range(len(b)):
+        for i in b[j]:
+            yield i
+
+def vis(img, gt, out):
+
+    plt.ion()
+    plt.subplot(2, 2, 1)
+    im = img.data.cpu().numpy()[:3, :, :].transpose(1, 2, 0)*255
+    out = out.data.cpu().numpy()
+    out = np.argmax(out, 0)
+    plt.imshow(cv2.cvtColor(im.astype('uint8'), cv2.COLOR_BGR2RGB))
+    plt.subplot(2, 2, 2)
+    fg = img.data.cpu().numpy()[3:, :, :].transpose(1, 2, 0)
+    plt.imshow(fg.squeeze())
+    plt.subplot(2, 2, 3)
+    plt.imshow(gt.squeeze())
+    plt.subplot(2, 2, 4)
+    plt.imshow(out)
+    plt.show()
+    plt.pause(0.05)
+    plt.clf()
 
 def get_iou(pred, gt, ignore_cls=None):
     if pred.shape != gt.shape:
         print('pred shape', pred.shape, 'gt shape', gt.shape)
     assert (pred.shape == gt.shape)
-    #gt = gt.astype(np.float32)
-    #pred = pred.astype(np.float32)
 
     labels = np.unique(gt).tolist()
     if isinstance(ignore_cls, int):
@@ -77,51 +129,4 @@ def get_general_iou(pred, gt):
     Aiou = np.sum(result_class[:]) / float(len(np.unique(gt)))
 
     return Aiou
-
-
-def validate(name, train=False):
-    seg_path = result_path+name
-    davis_path = '/home/hakjine/datasets/DAVIS/DAVIS-2016/DAVIS/Annotations/480p'
-    vot_gt_path = '/home/hakjine/datasets/VOT/vot2016/Annotations'
-    path = davis_path
-    zf = 0
-    if path is davis_path:
-        zf = 9
-    else:
-        zf = 12
-
-    seqs = sorted(np.loadtxt(os.path.join(davis_path, 'val_seqs.txt')).tolist())
-    if train:
-        seqs = sorted(np.loadtxt(os.path.join(davis_path, 'train_seqs.txt')).tolist())
-
-    import json
-
-    miou = 0
-    result = OrderedDict()
-    for seq in seqs:
-
-        imgs = sorted(os.listdir(os.path.join(seg_path, seq)))
-        mmiou = 0
-        for frame in imgs:
-            img = cv2.imread(os.path.join(seg_path, seq, frame))
-            img = np.asarray(Image.open(os.path.join(seg_path, seq, frame)))
-            gt = np.asarray(Image.open(os.path.join(path, seq, frame)))
-            #img = cv2.resize(img, (gt.shape[1], gt.shape[0]))
-            img = 1.*img/np.max(img)
-            img[img > 0.6] = 255
-            img[img != 255] = 0
-            iou = get_iou(img, gt, 0)
-            mmiou += iou
-        mmiou = mmiou / len(imgs)
-        result[seq] = mmiou
-        miou += mmiou
-    #    print(seq, " miou: ", mmiou)
-    print("Total mIoU:", miou/len(seqs))
-    with open('results/davis_result'+name+'.txt', 'w') as file:
-        result['t mIoU'] = miou/len(seqs)
-        json.dump(result, file, indent=2)
-    return miou/len(seqs)
-
-if __name__ == '__main__':
-    validate(name='adam')
 

@@ -12,36 +12,17 @@ sys.path.append('..')
 
 from models import deeplab_resnet 
 from collections import OrderedDict
-from docopt import docopt
 from tools.utils import get_iou
 from dataloader.datasets import DAVIS2016
 import json
 from evaluation.finetuning import finetune
 
-davis_path = '/home/hakjinlee/datasets/DAVIS/DAVIS-2016/DAVIS'
+davis_path = '/home/hakjine/datasets/DAVIS/DAVIS-2016/DAVIS'
 im_path = os.path.join(davis_path, 'JPEGImages/480p')
 gt_path = os.path.join(davis_path, 'Annotations/480p')
 
-
-docstr = """Evaluate ResNet-DeepLab trained on scenes (VOC 2012),a total of 21 labels including background
-
-Usage: 
-    evalpyt.py [options]
-
-Options:
-    -h, --help                  Print this message
-    --visualize                 view outputs of each sketch
-    --NoLabels=<int>            The number of different labels in video object segmentation, foreground and background [default: 2]
-    --gpu=<int>                 GPU number [default: 0]
-"""
-
-args = docopt(docstr, version='v0.9')
-print(args)
-num_gpu = int(args['--gpu'])
-torch.cuda.set_device(num_gpu)
-
-max_label = int(args['--NoLabels'])-1 # labels from 0,1, ... 20(for VOC) 
-
+num_gpu = 0
+os.environ['CUDA_VISIBLE_DEVICES'] = str(num_gpu)
 
 def test_model(model, vis=False, save=True):
     model.eval()
