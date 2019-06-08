@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
+import json
+from evaluation.finetuning import finetune
 
 import torch
 import torch.nn as nn
@@ -14,15 +16,12 @@ from models import deeplab_resnet
 from collections import OrderedDict
 from tools.utils import get_iou
 from dataloader.datasets import DAVIS2016
-import json
-from evaluation.finetuning import finetune
 
-davis_path = '/home/hakjine/datasets/DAVIS/DAVIS-2016/DAVIS'
-im_path = os.path.join(davis_path, 'JPEGImages/480p')
-gt_path = os.path.join(davis_path, 'Annotations/480p')
+DATASET_PATH = '/home/hakjine/datasets'
+DAVIS_PATH= os.path.join(DATASET_PATH, 'DAVIS/DAVIS-2016/DAVIS')
 
-num_gpu = 0
-os.environ['CUDA_VISIBLE_DEVICES'] = str(num_gpu)
+SAVE_PATH = 'MaskTrack_Box'
+PRETRAINED_PATH = '../data/snapshots/trained_masktrack_box.pth'
 
 def test_model(model, vis=False, save=True):
     model.eval()
@@ -89,7 +88,7 @@ def test_model(model, vis=False, save=True):
                 fc[np.where(output==1)] = 100/255.
 
             if save:
-                save_path = '../data/save/Result_masktrack'
+                save_path = os.path.join('../data/save', 'Result_'+SAVE_PATH)
                 folder = os.path.join(save_path, i.split('/')[0])
                 if not os.path.isdir(folder):
                     os.makedirs(folder)
@@ -100,6 +99,7 @@ def test_model(model, vis=False, save=True):
         dumps[seq] = seq_iou/len(img_list)
         tiou += seq_iou/len(img_list)
 
+    print('Total Mean IoU:', tiou/len(val_seqs))
     dumps['t mIoU'] = tiou/len(val_seqs)
     with open('result.json', 'w') as f:
         json.dump(dumps, f, indent=2)
@@ -108,10 +108,12 @@ def test_model(model, vis=False, save=True):
     return tiou/len(val_seqs)
 
 if __name__ == '__main__':
-    model = deeplab_resnet.Res_Deeplab_4chan(int(args['--NoLabels']))
-    state_dict = torch.load('../data/snapshots/trained_masktrack_box.pth')
+    num_gpu = 0
+    os.environ['CUDA_VISIBLE_DEVICES'] = str(num_gpu)
+
+    model = deeplab_resnet.Res_Deeplab_4chan(2)
+    state_dict = torch.load(PRETRAINED_PATH)
     model.load_state_dict(state_dict)
     model = model.cuda()
     model.eval()
-    res = test_model(model, vis=args['--visualize'])
-    print(res)
+    res = test_model(model, vis=True)
