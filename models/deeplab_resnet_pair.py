@@ -265,8 +265,14 @@ class MS_Deeplab_ms(nn.Module):
         self.Scale = ResNet_ms(block,[3, 4, 23, 3],NoLabels, in_channel=3)   #changed to fix #4 
         self.aspp = build_aspp(output_stride=16)
 
+        self.conv1_1 = nn.Sequential(
+            nn.Conv2d(2048, 1024, kernel_size=3, padding=1),
+            nn.BatchNorm2d(1024),
+            nn.ReLU())
+
+
         self.branch = nn.Sequential(
-            nn.Conv2d(2048, 256, kernel_size=3, padding=1),
+            nn.Conv2d(1024, 256, kernel_size=3, padding=1),
             nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 512, kernel_size=1),
@@ -274,34 +280,32 @@ class MS_Deeplab_ms(nn.Module):
             nn.ReLU())
         
         self.fuse = nn.Sequential(
-            nn.Conv2d(1024, 1024, kernel_size=1),
-            nn.BatchNorm2d(1024),
+            nn.Conv2d(1024+512, 512, kernel_size=1),
+            nn.BatchNorm2d(512),
             nn.ReLU(),
-            nn.Conv2d(1024, 2048, kernel_size=1),
-            nn.BatchNorm2d(2048),
+            nn.Conv2d(512, 1024, kernel_size=1),
+            nn.BatchNorm2d(1024),
             nn.ReLU())
 
         self.template_refine= nn.Sequential(
                 #nn.Conv2d(48+256, 256, kernel_size=3, stride=1, padding=1, bias=False),
-                nn.Conv2d(2048, 256, kernel_size=7, stride=2, padding=3, bias=False),
+                nn.Conv2d(1024, 256, kernel_size=7, stride=2, padding=3, bias=False),
                 nn.BatchNorm2d(256),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=3, stride=2, padding=1, ceil_mode=True), # change
+                #nn.MaxPool2d(kernel_size=3, stride=2, padding=1, ceil_mode=True), # change
                 nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(128),
                 nn.ReLU())
 
         self.template_fuse = nn.Sequential(
-                nn.Conv2d(128+128, 256, kernel_size=3, stride=2, padding=1, bias=False),
-                nn.BatchNorm2d(256),
+                nn.Conv2d(128+128, 512, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(512),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=3, stride=2, padding=1, ceil_mode=True), # change
-                nn.Conv2d(256, 2048, kernel_size=3, stride=2, padding=1, bias=False),
-                nn.BatchNorm2d(2048),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=3, stride=2, padding=1, ceil_mode=True))
-
-
+                #nn.MaxPool2d(kernel_size=3, stride=2, padding=1, ceil_mode=True), # change
+                nn.Conv2d(512, 1024, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(1024),
+                nn.ReLU())
+                #nn.MaxPool2d(kernel_size=3, stride=2, padding=1, ceil_mode=True))
 
         self.refine= nn.Sequential(
                 nn.Conv2d(256+256, 256, kernel_size=3, stride=1, padding=1, bias=False),
@@ -343,6 +347,7 @@ class MS_Deeplab_ms(nn.Module):
     def set_template(self, x, mask):
         x = (x - self.mean) / self.std
         ll, low_level_feat, out = self.Scale(x)
+        out = self.conv1_1(out)
         out = self.template_refine(out)
         mask = F.interpolate(mask, size=out.shape[2:])
         branch = out * mask
@@ -354,7 +359,8 @@ class MS_Deeplab_ms(nn.Module):
         #fused_feature = torch.cat([branch_feature, mask_feature], 1)
         #fused_feature = self.fuse(fused_feature)
         #out = out + fused_feature
-        template_feature = F.max_pool2d(out, kernel_size=out.shape[2:])
+        #template_feature = F.max_pool2d(out, kernel_size=out.shape[2:])
+        template_feature = F.avg_pool2d(out, kernel_size=out.shape[2:])
 
         return template_feature
 
@@ -363,15 +369,17 @@ class MS_Deeplab_ms(nn.Module):
 
         x = (x - self.mean) / self.std
         ll, low_level_feat, out,  = self.Scale(x)
+        out = self.conv1_1(out)
         mask = F.interpolate(mask, size=out.shape[2:])
 
         branch_feature = self.branch(out)
         mask_feature = branch_feature * mask
-        fused_feature = torch.cat([branch_feature, mask_feature], 1)
-        fused_feature = self.fuse(fused_feature)
-        out = out + fused_feature
-        out = out * template_feature
-
+        fused_feature = branch_feature + mask_feature
+        fused_feature = torch.cat([out , fused_feature], 1)
+        out = self.fuse(fused_feature)
+        #out = out + fused_feature
+        diff = torch.abs(out - template_feature)
+        out = torch.cat([out, diff], 1)
         out = self.aspp(out)
         #branch_feature = self.branch(low_level_feat)
         

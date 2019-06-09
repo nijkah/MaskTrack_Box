@@ -146,41 +146,46 @@ class YTB_VOS(data.Dataset):
     def __getitem__(self, index):
         flag = True 
 
+        index = index % self.size
+        seq = self.seq_id_list[index]
+        index_list = [i for i, x in enumerate(self.seq_id_list) if x == seq]
+        index_list.remove(index)
+
         while flag:
-            index = index % self.size
-            seq = self.seq_id_list[index]
-            index_list = [i for i, x in enumerate(self.seq_id_list) if x == seq]
-            index_list.remove(index)
-            search_index = random.choice(index_list)
+            if len(index_list) == 0:
+                index = random.choice(list(range(self.size)))
+                seq = self.seq_id_list[index]
+                index_list = [i for i, x in enumerate(self.seq_id_list) if x == seq]
+                index_list.remove(index)
 
-            i_index = index_list.index(search_index)
-            candidates = index_list[i_index-1:i_index] + index_list[i_index+1:i_index+2]
-            
-            gt_template = np.expand_dims(np.array(Image.open(self.gt_list[index])), axis=3)
-            if len(np.unique(gt_template)) == 1:
+            gt_template_o = np.expand_dims(np.array(Image.open(self.gt_list[index])), axis=3)
+            if len(np.unique(gt_template_o)) == 1:
                 index = random.choice(index_list)
+                index_list.remove(index)
                 continue
-            for i in range(10):
-                search_index = random.choice(index_list)
-                if len(candidates) == 0:
-                    index = random.choice(index_list)
-                    index_list.remove(index)
-                    continue
-                mask_index = random.choice(candidates)
-                mask = np.expand_dims(np.array(Image.open(self.gt_list[mask_index])), axis=3)
-                if len(np.unique(mask)) == 1:
-                    candidates.remove(mask_index)
+
+            search_center = random.choice(index_list)
+            i_index = index_list.index(search_center)
+            index_list.remove(search_center)
+            candidates = index_list[i_index-2:i_index] + index_list[i_index+1:i_index+3]
+
+            while len(candidates) > 0:
+                search_index = random.choice(candidates)
+
+                gt_search_o = np.expand_dims(np.array(Image.open(self.gt_list[search_index])), axis=3)
+                if len(np.unique(gt_search_o)) == 1:
+                    candidates.remove(search_index)
                     continue
 
-                gt_search = np.expand_dims(np.array(Image.open(self.gt_list[search_index])), axis=3)
-                labels_template = np.unique(gt_template).tolist()
-                labels_search = np.unique(gt_search).tolist()
-                labels_mask = np.unique(mask).tolist()
-                labels = list(set(labels_template).intersection(set(labels_search)).intersection(labels_mask))
+                labels_template = np.unique(gt_template_o).tolist()
+                labels_search = np.unique(gt_search_o).tolist()
+                labels = list(set(labels_template).intersection(set(labels_search)))
                 if 0 in labels:
                     labels.remove(0)
-                if len(labels) != 0:
+                while len(labels) > 0:
                     idx = random.choice(labels)
+                    gt_template = gt_template_o.copy()
+                    gt_search = gt_search_o.copy()
                     gt_template[gt_template!=idx] = 0
                     gt_search[gt_search!=idx] = 0
                     gt_template[gt_template==idx] = 1
@@ -188,17 +193,14 @@ class YTB_VOS(data.Dataset):
                     bb_template = cv2.boundingRect(gt_template.squeeze())
                     bb_search = cv2.boundingRect(gt_search.squeeze())
                     if bb_search[2] < 30 or bb_search[3] < 30 or bb_template[2] < 30 or bb_template[3] < 30:
+                        labels.remove(idx)
                         continue
-                    mask[mask!=idx] = 0
-                    mask[mask==idx] = 1
                     img_template  = cv2.imread(self.image_list[index])
                     img_search = cv2.imread(self.image_list[search_index])
                     flag = False
                     break
-            else:
-                index = random.choice(index_list)
-                index_list.remove(index)
-                continue
+                candidates.remove(search_index)
+
 
         if self.aug:
             img, mask, target, box, gt = aug_pair(img_template, img_search, gt_template, gt_search)
@@ -215,6 +217,7 @@ class YTB_VOS(data.Dataset):
         target = torch.from_numpy(target.astype(np.float32))
         box = torch.from_numpy(box.astype(np.float32))
         gt = torch.from_numpy(gt.astype(np.float32))
+
 
         return img, mask, target, box, gt
 

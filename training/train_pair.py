@@ -20,16 +20,16 @@ from models import deeplab_resnet_pair
 from dataloader.datasets_pair import DAVIS2016, YTB_VOS, ECSSD_dreaming, MSRA10K_dreaming
 from tools.loss import cross_entropy_loss_weighted, cross_entropy_loss
 from evaluation.test_pair import test_model
-from tools.utils import vis_2
+from tools.utils import *
 
-DATASET_PATH = '/home/hakjine/datasets'
+DATASET_PATH = '/data/hakjin-workspace/'
 DAVIS_PATH = os.path.join(DATASET_PATH, 'DAVIS/DAVIS-2016/DAVIS')
 VOS_PATH = os.path.join(DATASET_PATH, 'Youtube-VOS')
 #ECSSD_path = '../data/ECSSD'
 #MSRA10K_path = '../data/MSRA10K'
 ECSSD_PATH = os.path.join(DATASET_PATH, 'ECSSD')
 MSRA10K_PATH = os.path.join(DATASET_PATH, 'MSRA10K')
-SAVED_DICT_PATH = '../data/MS_DeepLab_resnet_trained_VOC.pth'
+SAVED_DICT_PATH = '/data/hakjin-workspace/MS_DeepLab_resnet_trained_VOC.pth'
 
 def main(args):
 
@@ -72,7 +72,7 @@ def main(args):
 
     train_loader = DataLoader(db_train, batch_size=batch_size, shuffle=True)
 
-    optimizer = optim.SGD([{'params': get_1x_lr_params_NOscale(model), 'lr': base_lr }, {'params': get_10x_lr_params(model), 'lr': 10*base_lr} ], lr = base_lr, momentum = 0.9,weight_decay = weight_decay)
+    optimizer = optim.SGD([{'params': get_1x_lr_params_NOscale(model), 'lr': base_lr }, {'params':get_10x_lr_params(model), 'lr': 10*base_lr} ], lr = base_lr, momentum = 0.9,weight_decay = weight_decay)
     #optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr = base_lr, momentum = 0.9,weight_decay = weight_decay)
     optimizer.zero_grad()
 
@@ -106,7 +106,7 @@ def main(args):
             optimizer.step()
             lr_ = lr_poly(base_lr,iter,max_iter,0.9)
             print('(poly lr policy) learning rate',lr_)
-            optimizer = optim.SGD([{'params': get_1x_lr_params_NOscale(model), 'lr': lr_ }, {'params': get_10x_lr_params(model), 'lr': 10*lr_} ], lr = lr_, momentum = 0.9,weight_decay = weight_decay)
+            optimizer = optim.SGD([{'params': get_1x_lr_params_NOscale(model), 'lr': lr_ }, {'params':get_10x_lr_params(model), 'lr': 10*lr_} ], lr = lr_, momentum = 0.9,weight_decay = weight_decay)
             #optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr = lr_, momentum = 0.9,weight_decay = weight_decay)
             optimizer.zero_grad()
 
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train ResNet-DeepLab on segmentation datasets in pytorch using VOC12\
         pretrained initialization')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning Rate')
-    parser.add_argument('--batchSize', '-b', type=int, default=12, help='Number of samples per batch')
+    parser.add_argument('--batchSize', '-b', type=int, default=5, help='Number of samples per batch')
     parser.add_argument('--wtDecay', type=float, default=0.0005, help='Weight decay during training')
     parser.add_argument('--gpu', type=int, default=0, help='GPU number')
     parser.add_argument('--maxIter', type=int, default=20000, help='Maximum number of iterations')
