@@ -39,6 +39,7 @@ def test_model(model, vis=False, save=True):
 
             img_original = cv2.imread(os.path.join(im_path,i+'.jpg'))
             img_original = cv2.cvtColor(img_original, cv2.COLOR_BGR2RGB)
+            oh, ow, _ = img_original.shape
             img_temp = img_original.copy().astype(float)/255.
             
             gt_original = cv2.imread(os.path.join(gt_path,i+'.png'),0)
@@ -61,19 +62,21 @@ def test_model(model, vis=False, save=True):
                 previous = np.zeros(gt_original.shape).astype('uint8')
                 previous[bb[1]:bb[1]+bb[3]+1, bb[0]:bb[0]+bb[2]+1]= 1
 
-            search_region = crop_and_padding(img_temp, previous, (dim, dim))
-            mask = crop_and_padding(previous, previous, (dim, dim))
+            #search_region = crop_and_padding(img_temp, previous, (dim, dim))
+            #mask = crop_and_padding(previous, previous, (dim, dim))
+            search_region = img_temp.copy()
+            mask = previous.copy()
+            search_region = cv2.resize(search_region, (dim, dim))
+            mask = cv2.resize(mask, (dim, dim), cv2.INTER_NEAREST)
             image = torch.FloatTensor(np.expand_dims(search_region,0).transpose(0,3,1,2)).cuda()
             mask = torch.FloatTensor(mask[np.newaxis, :, :, np.newaxis].transpose(0,3,1,2)).cuda()
 
 
             output = model(image, mask, template, box)
-            pred_c = F.interpolate(output, size=(321,321), mode='bilinear').data.cpu().numpy()
+            pred_c = F.interpolate(output, size=(oh,ow), mode='bilinear').data.cpu().numpy()
             pred_c = pred_c.squeeze(0).transpose(1,2,0)
 
-            bb = list(cv2.boundingRect(previous.astype('uint8')))
-            pred = restore_mask(pred_c, bb, img_original.shape)
-            pred = np.argmax(pred, axis=2).astype('uint8')
+            pred = np.argmax(pred_c, axis=2).astype('uint8')
                         
             plt.ion()
             if vis:

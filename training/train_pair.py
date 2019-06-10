@@ -149,4 +149,5 @@ if __name__ == '__main__':
         os.makedirs('../data/losses')
 
     main(args)
+    print('11')
 
