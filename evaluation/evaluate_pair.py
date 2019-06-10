@@ -12,11 +12,13 @@ import torch.nn as nn
 
 sys.path.append('..')
 
-from models import deeplab_resnet 
+from models import deeplab_resnet_pair
 from tools.utils import *
 
-DATASET_PATH = '/home/hakjine/datasets'
+DATASET_PATH = '/data/hakjin-workspace'
 DAVIS_PATH= os.path.join(DATASET_PATH, 'DAVIS/DAVIS-2016/DAVIS')
+im_path = os.path.join(DAVIS_PATH, 'JPEGImages/480p')
+gt_path = os.path.join(DAVIS_PATH, 'Annotations/480p')
 
 SAVE_PATH = 'template_module'
 PRETRAINED_PATH = '../data/snapshots/trained_masktrack_box.pth'
@@ -24,7 +26,7 @@ PRETRAINED_PATH = '../data/snapshots/trained_masktrack_box.pth'
 def test_model(model, vis=False, save=True):
     dim = 328
     model.eval()
-    val_seqs = np.loadtxt(os.path.join(davis_path, 'val_seqs.txt'), dtype=str).tolist()
+    val_seqs = np.loadtxt(os.path.join(DAVIS_PATH, 'val_seqs.txt'), dtype=str).tolist()
     dumps = OrderedDict()
 
     tiou = 0
@@ -51,9 +53,9 @@ def test_model(model, vis=False, save=True):
                 if bb is not None:
                     box[bb[1]:bb[1]+bb[3]+1, bb[0]:bb[0]+bb[2]+1, 0] = 1
                     template = np.expand_dims(template, 0).transpose(0,3,1,2)
-                    template = torch.FloatTensor(template).cuda(gpu0)
+                    template = torch.FloatTensor(template).cuda()
                     box = np.expand_dims(box, 0).transpose(0,3,1,2)
-                    box = torch.FloatTensor(box).cuda(gpu0)
+                    box = torch.FloatTensor(box).cuda()
                 previous = gt_original.copy()
                 bb = cv2.boundingRect(previous)
                 previous = np.zeros(gt_original.shape).astype('uint8')
@@ -128,8 +130,8 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = str(num_gpu)
 
     model = deeplab_resnet_pair.Res_Deeplab_4chan(2)
-    state_dict = torch.load(PRETRAINED_PATH)
-    model.load_state_dict(state_dict)
+    #state_dict = torch.load(PRETRAINED_PATH)
+    #model.load_state_dict(state_dict)
     model = model.cuda()
     model.eval()
     res = test_model(model, vis=True)
