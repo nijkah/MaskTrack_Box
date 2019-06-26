@@ -40,13 +40,7 @@ def get_10x_lr_params(model):
     """
 
     b = []
-    b.append(model.aspp.parameters())
-    b.append(model.branch.parameters())
-    b.append(model.fuse.parameters())
-    b.append(model.template_refine.parameters())
-    b.append(model.template_fuse.parameters())
-    b.append(model.refine.parameters())
-    b.append(model.predict.parameters())
+    b.append(model.Scale.layer5.parameters())
 
     for j in range(len(b)):
         for i in b[j]:

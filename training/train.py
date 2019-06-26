@@ -20,13 +20,13 @@ from tools.loss import cross_entropy_loss_weighted, cross_entropy_loss
 from tools.utils import *
 from evaluation.evaluate import test_model
 
-DATASET_PATH = '/home/hakjine/datasets'
-DAVIS_PATH = os.path.join(DATASET_PATH, 'DAVIS/DAVIS-2016/DAVIS')
-VOS_PATH = os.path.join(DATASET_PATH, 'Youtube-VOS')
-#ECSSD_path = '../data/ECSSD'
-#MSRA10K_path = '../data/MSRA10K'
-ECSSD_PATH = os.path.join(DATASET_PATH, 'ECSSD')
-MSRA10K_PATH = os.path.join(DATASET_PATH, 'MSRA10K')
+DATASET_PATH = '/data/shared/'
+DAVIS_PATH = os.path.join(DATASET_PATH, 'DAVIS/DAVIS-2016/')
+#VOS_PATH = os.path.join(DATASET_PATH, 'Youtube-VOS')
+ECSSD_PATH= '../data/ECSSD'
+MSRA10K_PATH= '../data/MSRA10K'
+#ECSSD_PATH = os.path.join(DATASET_PATH, 'ECSSD')
+#MSRA10K_PATH = os.path.join(DATASET_PATH, 'MSRA10K')
 SAVED_DICT_PATH = '../data/MS_DeepLab_resnet_trained_VOC.pth'
 
 def main(args):
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.001, help='Learning Rate')
     parser.add_argument('--batchSize', '-b', type=int, default=12, help='Number of samples per batch')
     parser.add_argument('--wtDecay', type=float, default=0.0005, help='Weight decay during training')
-    parser.add_argument('--gpu', type=int, default=0, help='GPU number')
+    parser.add_argument('--gpu', type=int, default=2, help='GPU number')
     parser.add_argument('--maxIter', type=int, default=20000, help='Maximum number of iterations')
 
     args = parser.parse_args()
