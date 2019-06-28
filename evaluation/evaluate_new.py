@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import os
 import sys
 import json
-#from evaluation.finetuning import finetune
+from evaluation.finetuning import finetune
 
 import torch
 import torch.nn as nn
@@ -12,7 +12,7 @@ import torch.nn.functional as F
 
 sys.path.append('..')
 
-from models import deeplab
+from models import deeplab_resnet 
 from collections import OrderedDict
 from tools.utils import get_iou
 from dataloader.datasets import DAVIS2016
@@ -25,14 +25,13 @@ PRETRAINED_PATH = '../data/snapshots/trained_masktrack_box.pth'
 
 def test_model(model, vis=False, save=True):
     model.eval()
-    with open(os.path.join(DAVIS_PATH, 'ImageSets/480p', 'val.txt')) as f:
+    with open(os.path.join(DAVIS, 'ImageSets/480p', 'val.txt') as f:
         files = f.readlines()
     dumps = OrderedDict()
+    val_seqs = sorted(list(set([i.split('/')[3] for i in x])))
     im_path = os.path.join(DAVIS_PATH, 'JPEGImages/480p')
     gt_path = os.path.join(DAVIS_PATH, 'Annotations/480p')
-    val_seqs = sorted(list(set([i.split('/')[3] for i in files])))
 
-    tiou = 0
     for seq in val_seqs:
         seq_path = os.path.join(im_path, seq)
         img_list = [os.path.join(seq, i)[:-4] for i in sorted(os.listdir(seq_path))]
@@ -60,7 +59,8 @@ def test_model(model, vis=False, save=True):
             img = np.dstack([img_temp, fc])
 
             output = model(torch.FloatTensor(np.expand_dims(img, 0).transpose(0,3,1,2)).cuda())
-            output = F.interpolate(output, size=(h, w)).data.cpu().numpy().squeeze()
+            interp = nn.UpsamplingBilinear2d(size=(h, w))
+            output = interp(output).data.cpu().numpy().squeeze()
             
             output = output.transpose(1,2,0)
             output = np.argmax(output,axis = 2)
@@ -114,9 +114,9 @@ if __name__ == '__main__':
     num_gpu = 0
     os.environ['CUDA_VISIBLE_DEVICES'] = str(num_gpu)
 
-    model = deeplab.build_Deeplab(2)
-    #state_dict = torch.load(PRETRAINED_PATH)
-    #model.load_state_dict(state_dict)
+    model = deeplab_resnet.Res_Deeplab_4chan(2)
+    state_dict = torch.load(PRETRAINED_PATH)
+    model.load_state_dict(state_dict)
     model = model.cuda()
     model.eval()
     res = test_model(model, vis=True)

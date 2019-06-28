@@ -1,7 +1,7 @@
 #!/bin/bash
 
-wget https://graphics.ethz.ch/Downloads/Data/Davis/DAVIS-data.zip
-unzip DAVIS-data.zip
+#wget https://graphics.ethz.ch/Downloads/Data/Davis/DAVIS-data.zip
+#unzip DAVIS-data.zip
 
 mkdir ECSSD
 cd ECSSD

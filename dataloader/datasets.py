@@ -35,24 +35,22 @@ class DAVIS(data.Dataset):
         self.replicates = replicates
         self.aug = aug
 
-        image_root = join(root, 'JPEGImages/480p')
-        gt_root = join(root, 'Annotations/480p')
         if train:
-            seqs_file = 'train_seqs.txt'
+            seqs_file = 'train.txt'
         else:
-            seqs_file = 'val_seqs.txt'
-        seq_list = sorted(np.loadtxt(join(root, seqs_file), dtype=str).tolist())
-        #seq_list = sorted(os.listdir(image_root))
+            seqs_file = 'val.txt'
+
+        with open(join(root, 'ImageSets/480p', seqs_file)) as f:
+            files = f.readlines()
 
         self.image_list = []
         self.gt_list = []
-        for seq in seq_list:
-            files = sorted(os.listdir(join(image_root, seq)))
-            for i in range(len(files)):
-                img = join(image_root, seq, files[i])
-                gt = join(gt_root, seq, files[i][:-4]+'.png')
-                self.image_list += [img]
-                self.gt_list += [gt]
+        for f in files:
+            im, gt = f.split()
+            img = join(root, im[1:])
+            gt = join(root, gt[1:])
+            self.image_list += [img]
+            self.gt_list += [gt]
 
         self.size = len(self.image_list)
         self.frame_size = cv2.imread(self.image_list[0]).shape
@@ -79,18 +77,7 @@ class DAVIS(data.Dataset):
         if self.aug:
             img, gt = aug_batch(img, gt)
             
-        #if self.is_cropped:
-        #    cropper = StaticRandomCrop(image_size, self.crop_size)
-        #else:
-        #    cropper = Statimreadize)
-        #images = list(map(imread
-
-        #img = cropper(img)imread
-        #gt = cropper(gt)
-
-        #img = np.array(img).transpose(2,0,1)
-        #gt = gt.transpose(2,0,1)
-        #gt = np.squeeze(gt)
+        
         img = img.transpose(2, 0, 1)
         gt = gt.transpose(2, 0, 1)
 
@@ -161,18 +148,6 @@ class YTB_VOS(data.Dataset):
         if self.aug:
             img, gt = aug_batch(img, gt)
 
-        #if self.is_cropped:
-        #    cropper = StaticRandomCrop(image_size, self.crop_size)
-        #else:
-        #    cropper = StaticCenterCrop(image_size, self.render_size)
-        #images = list(map(cropper, images))
-
-        #img = cropper(img)
-        #gt = cropper(gt)
-
-        #img = np.array(img).transpose(2,0,1)
-        #gt = gt.transpose(2,0,1)
-        #gt = np.squeeze(gt)
         img = img.transpose(2, 0, 1)
         gt = gt.transpose(2, 0, 1)
 
@@ -195,12 +170,7 @@ class ECSSD(data.Dataset):
 
         image_root = join(root, 'images')
         gt_root = join(root, 'ground_truth_mask')
-        #if train:
-        #    seqs_file = 'train_seqs.txt'
-        #else:
-        #    seqs_file = 'val_seqs.txt'
-        #seq_list = sorted(np.loadtxt(join(root, seqs_file), dtype=str).tolist())
-
+        
         self.image_list = []
         self.gt_list = []
         files = sorted(os.listdir(image_root))
@@ -235,18 +205,7 @@ class ECSSD(data.Dataset):
         if self.aug:
             img, gt = aug_batch(img, gt)
             
-        #if self.is_cropped:
-        #    cropper = StaticRandomCrop(image_size, self.crop_size)
-        #else:
-        #    cropper = StaticCenterCrop(image_size, self.render_size)
-        #images = list(map(cropper, images))
-
-        #img = cropper(img)
-        #gt = cropper(gt)
-
-        #img = np.array(img).transpose(2,0,1)
-        #gt = gt.transpose(2,0,1)
-        #gt = np.squeeze(gt)
+        
         img = img.transpose(2, 0, 1)
         gt = gt.transpose(2, 0, 1)
 
@@ -269,12 +228,7 @@ class MSRA10K(data.Dataset):
 
         image_root = join(root, 'images')
         gt_root = join(root, 'annotations')
-        #if train:
-        #    seqs_file = 'train_seqs.txt'
-        #else:
-        #    seqs_file = 'val_seqs.txt'
-        #seq_list = sorted(np.loadtxt(join(root, seqs_file), dtype=str).tolist())
-        #seq_list = sorted(os.listdir(image_root))
+        
         
         self.image_list = []
         self.gt_list = []
@@ -311,18 +265,7 @@ class MSRA10K(data.Dataset):
         if self.aug:
             img, gt = aug_batch(img, gt)
             
-        #if self.is_cropped:
-        #    cropper = StaticRandomCrop(image_size, self.crop_size)
-        #else:
-        #    cropper = StaticCenterCrop(image_size, self.render_size)
-        #images = list(map(cropper, images))
-
-        #img = cropper(img)
-        #gt = cropper(gt)
-
-        #img = np.array(img).transpose(2,0,1)
-        #gt = gt.transpose(2,0,1)
-        #gt = np.squeeze(gt)
+        
         img = img.transpose(2, 0, 1)
         gt = gt.transpose(2, 0, 1)
 

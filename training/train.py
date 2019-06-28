@@ -14,7 +14,7 @@ import timeit
 import argparse
 sys.path.append('..')
 
-from models import deeplab_resnet
+from models import deeplab
 from dataloader.datasets import DAVIS2016, YTB_VOS, ECSSD, MSRA10K
 from tools.loss import cross_entropy_loss_weighted, cross_entropy_loss
 from tools.utils import *
@@ -23,11 +23,10 @@ from evaluation.evaluate import test_model
 DATASET_PATH = '/data/shared/'
 DAVIS_PATH = os.path.join(DATASET_PATH, 'DAVIS/DAVIS-2016/')
 #VOS_PATH = os.path.join(DATASET_PATH, 'Youtube-VOS')
-ECSSD_PATH= '../data/ECSSD'
-MSRA10K_PATH= '../data/MSRA10K'
-#ECSSD_PATH = os.path.join(DATASET_PATH, 'ECSSD')
-#MSRA10K_PATH = os.path.join(DATASET_PATH, 'MSRA10K')
-SAVED_DICT_PATH = '../data/MS_DeepLab_resnet_trained_VOC.pth'
+#ECSSD_PATH= '../data/ECSSD'
+#MSRA10K_PATH= '../data/MSRA10K'
+ECSSD_PATH = os.path.join(DATASET_PATH, 'ECSSD')
+MSRA10K_PATH = os.path.join(DATASET_PATH, 'MSRA10K')
 
 def main(args):
 
@@ -40,7 +39,7 @@ def main(args):
     
     start = timeit.timeit()
 
-    model = deeplab_resnet.Res_Deeplab_4chan(2)
+    model = deeplab.build_Deeplab(2)
     saved_state_dict = torch.load(SAVED_DICT_PATH)
 
     for i in saved_state_dict:
@@ -54,6 +53,7 @@ def main(args):
     model_dict.update(saved_state_dict)
 
     model.load_state_dict(model_dict)
+
     model.cuda()
 
     db_davis_train = DAVIS2016(train=True,root=DAVIS_PATH, aug=True)
@@ -64,7 +64,7 @@ def main(args):
 
     train_loader = DataLoader(db_train, batch_size=batch_size, shuffle=True)
 
-    optimizer = optim.SGD([{'params': get_1x_lr_params_NOscale(model), 'lr': base_lr }, {'params': get_10x_lr_params(model), 'lr': 10*base_lr} ], lr = base_lr, momentum = 0.9,weight_decay = weight_decay)
+    optimizer = optim.SGD([{'params': model.get_1x_lr_params_NOscale(), 'lr': base_lr }, {'params': model.get_10x_lr_params(), 'lr': 10*base_lr} ], lr = base_lr, momentum = 0.9,weight_decay = weight_decay)
     optimizer.zero_grad()
 
 
@@ -95,7 +95,7 @@ def main(args):
             optimizer.step()
             lr_ = lr_poly(base_lr,iter,max_iter,0.9)
             print('(poly lr policy) learning rate',lr_)
-            optimizer = optim.SGD([{'params': get_1x_lr_params_NOscale(model), 'lr': lr_ }, {'params': get_10x_lr_params(model), 'lr': 10*lr_} ], lr = lr_, momentum = 0.9,weight_decay = weight_decay)
+            optimizer = optim.SGD([{'params': model.get_1x_lr_params_NOscale(), 'lr': lr_ }, {'params': model.get_10x_lr_params(), 'lr': 10*lr_} ], lr = lr_, momentum = 0.9,weight_decay = weight_decay)
             optimizer.zero_grad()
 
             if iter % 1000 == 0 and iter!=0:
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.001, help='Learning Rate')
     parser.add_argument('--batchSize', '-b', type=int, default=12, help='Number of samples per batch')
     parser.add_argument('--wtDecay', type=float, default=0.0005, help='Weight decay during training')
-    parser.add_argument('--gpu', type=int, default=2, help='GPU number')
+    parser.add_argument('--gpu', type=int, default=0, help='GPU number')
     parser.add_argument('--maxIter', type=int, default=20000, help='Maximum number of iterations')
 
     args = parser.parse_args()

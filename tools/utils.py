@@ -8,44 +8,6 @@ import cv2
 def lr_poly(base_lr, iter,max_iter,power):
     return base_lr*((1-float(iter)/max_iter)**(power))
 
-def get_1x_lr_params_NOscale(model):
-    """
-    This generator returns all the parameters of the net except for 
-    the last classification layer. Note that for each batchnorm layer, 
-    requires_grad is set to False in deeplab_resnet.py, therefore this function does not return 
-    any batchnorm parameter
-    """
-    b = []
-
-    b.append(model.Scale.conv1)
-    b.append(model.Scale.bn1)
-    b.append(model.Scale.layer1)
-    b.append(model.Scale.layer2)
-    b.append(model.Scale.layer3)
-    b.append(model.Scale.layer4)
-
-    
-    for i in range(len(b)):
-        for j in b[i].modules():
-            jj = 0
-            for k in j.parameters():
-                jj+=1
-                if k.requires_grad:
-                    yield k
-
-def get_10x_lr_params(model):
-    """
-    This generator returns all the parameters for the last layer of the net,
-    which does the classification of pixel into classes
-    """
-
-    b = []
-    b.append(model.Scale.layer5.parameters())
-
-    for j in range(len(b)):
-        for i in b[j]:
-            yield i
-
 def overlay(img, mask, color=[255, 0, 0], transparency=0.6):
     gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     im_over = np.zeros(img.shape)
@@ -56,7 +18,6 @@ def overlay(img, mask, color=[255, 0, 0], transparency=0.6):
     im_over[im_over<0] =0 
 
     return im_over
-
 
 def vis(img, mask, gt, out, analysis=True):
     plt.ion()
