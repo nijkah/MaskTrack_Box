@@ -1,6 +1,6 @@
 from models.backbone import resnet
 
-def build_backbone(backbone, in_channel=4, pretrained=True):
+def build_backbone(backbone, in_channel, pretrained=True):
     ms = False
     if backbone == 'resnet_ms':
         ms = True

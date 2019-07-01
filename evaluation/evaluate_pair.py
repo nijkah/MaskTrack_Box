@@ -12,11 +12,11 @@ import torch.nn as nn
 
 sys.path.append('..')
 
-from models import deeplab_resnet_pair
+from models import siam_deeplab
 from tools.utils import *
 
-DATASET_PATH = '/data/hakjin-workspace'
-DAVIS_PATH= os.path.join(DATASET_PATH, 'DAVIS/DAVIS-2016/DAVIS')
+DATASET_PATH = '/data/shared'
+DAVIS_PATH= os.path.join(DATASET_PATH, 'DAVIS/DAVIS-2016/')
 im_path = os.path.join(DAVIS_PATH, 'JPEGImages/480p')
 gt_path = os.path.join(DAVIS_PATH, 'Annotations/480p')
 
@@ -26,7 +26,13 @@ PRETRAINED_PATH = '../data/snapshots/trained_masktrack_box.pth'
 def test_model(model, vis=False, save=True):
     dim = 328
     model.eval()
-    val_seqs = np.loadtxt(os.path.join(DAVIS_PATH, 'val_seqs.txt'), dtype=str).tolist()
+    with open(os.path.join(DAVIS_PATH, 'ImageSets/480p', 'val.txt')) as f:
+        files = f.readlines()
+    dumps = OrderedDict()
+    im_path = os.path.join(DAVIS_PATH, 'JPEGImages/480p')
+    gt_path = os.path.join(DAVIS_PATH, 'Annotations/480p')
+    val_seqs = sorted(list(set([i.split('/')[3] for i in files])))
+
     dumps = OrderedDict()
 
     tiou = 0
@@ -113,7 +119,7 @@ def test_model(model, vis=False, save=True):
                 folder = os.path.join(save_path, i.split('/')[0])
                 if not os.path.isdir(folder):
                     os.makedirs(folder)
-                cv2.imwrite(os.path.join(save_path, i+'.png'),output*255)
+                cv2.imwrite(os.path.join(save_path, i+'.png'),previous*255)
             seq_iou += iou
 
         print(seq, seq_iou/len(img_list))
@@ -129,12 +135,12 @@ def test_model(model, vis=False, save=True):
     return tiou/len(val_seqs)
 
 if __name__ == '__main__':
-    num_gpu = 0
+    num_gpu = 6
     os.environ['CUDA_VISIBLE_DEVICES'] = str(num_gpu)
 
-    model = deeplab_resnet_pair.Res_Deeplab_4chan(2)
+    model = siam_deeplab.build_siam_Deeplab(2)
     #state_dict = torch.load(PRETRAINED_PATH)
     #model.load_state_dict(state_dict)
     model = model.cuda()
     model.eval()
-    res = test_model(model, vis=True)
+    res = test_model(model, vis=False)

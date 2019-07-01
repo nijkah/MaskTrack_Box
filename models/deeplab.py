@@ -30,7 +30,7 @@ class Classifier_Module(nn.Module):
 class MS_Deeplab(nn.Module):
     def __init__(self, NoLabels, pretrained=False):
         super(MS_Deeplab,self).__init__()
-        self.backbone= build_backbone('resnet', pretrained=pretrained)
+        self.backbone= build_backbone('resnet', in_channel=4, pretrained=pretrained)
         self.classifier = _make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24], NoLabels)
 
         self.register_buffer('mean', torch.FloatTensor([0.485, 0.456, 0.406, 0]).view(1,4,1,1))

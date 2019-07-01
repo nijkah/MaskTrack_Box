@@ -181,8 +181,11 @@ class ResNet(nn.Module):
 
 
 class ResNet_ms(ResNet):
-    def __init__(self, block, layers, in_channel=3):
-        super(ResNet_ms, self).__init__()
+    def __init__(self, block, layers, in_channel=3, pretrained=False):
+        super(ResNet_ms, self).__init__(block, layers, in_channel=3, pretrained=False)
+        self.in_channel = in_channel
+        self.conv1 = nn.Conv2d(self.in_channel, 64, kernel_size=7, stride=2, padding=3,
+                               bias=False)
         
     def forward(self, x):
         x = self.conv1(x)

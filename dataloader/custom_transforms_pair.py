@@ -1,12 +1,13 @@
 import torch
 import torch.utils.data as data
 import torch.nn as nn
+import torch.nn.functional as F
 
 import os, math, random
 from os.path import *
 
 import cv2
-from scipy.misc import imread, imresize, imsave
+from skimage.io import imread
 import imgaug as ia
 from imgaug import augmenters as iaa
 
@@ -28,9 +29,10 @@ def outS(i):
 
 def resize_label_batch(label, size):
     label_resized = np.zeros((size,size,1,label.shape[3]))
-    interp = nn.Upsample(size=(size, size), mode='bilinear')
+    #interp = nn.Upsample(size=(size, size), mode='bilinear')
     labelVar = torch.from_numpy(label.transpose(3, 2, 0, 1))
-    label_resized[:, :, :, :] = interp(labelVar).data.numpy().transpose(2, 3, 1, 0)
+    label_resized[:, :, :, :] = F.interpolate(labelVar, size=(size, size), 
+            mode='bilinear', align_corners=True).data.numpy().transpose(2, 3, 1, 0)
     label_resized[label_resized>0.3]  = 1
     label_resized[label_resized != 0]  = 1
 
