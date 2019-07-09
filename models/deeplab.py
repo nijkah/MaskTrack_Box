@@ -82,7 +82,7 @@ class MS_Deeplab(nn.Module):
             for i in b[j]:
                 yield i
 
-def build_Deeplab(NoLabels=2):
-    model = MS_Deeplab(NoLabels, pretrained=True)
+def build_Deeplab(NoLabels=2, pretrained=False):
+    model = MS_Deeplab(NoLabels, pretrained=pretrained)
     return model
 

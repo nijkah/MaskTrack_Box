@@ -22,7 +22,7 @@ VOS_PATH = os.path.join(DATASET_PATH, 'Youtube-VOS')
 #MSRA10K_PATH= '../data/MSRA10K'
 ECSSD_PATH = os.path.join(DATASET_PATH, 'ECSSD')
 MSRA10K_PATH = os.path.join(DATASET_PATH, 'MSRA10K')
-SAVED_DICT_PATH = os.path.join(DATASET_PATH, 'MS_DeepLab_resnet_trained_voc.pth')
+SAVED_DICT_PATH = os.path.join(DATASET_PATH, 'MS_DeepLab_resnet_trained_VOC.pth')
 
 def main(args):
 
@@ -34,29 +34,38 @@ def main(args):
     
     start = timeit.timeit()
 
-    model = deeplab.build_Deeplab(2)
-    #saved_state_dict = torch.load(SAVED_DICT_PATH)
+    model = deeplab.build_Deeplab(2, pretrained=True)
+    saved_state_dict = torch.load(SAVED_DICT_PATH)
 
-    #for i in saved_state_dict:
-    #    i_parts = i.split('.')
-    #    if i_parts[1]=='layer5':
-    #        saved_state_dict[i] = model.state_dict()[i]
-    #    if i_parts[1] == 'conv1':
-    #        saved_state_dict[i] = torch.cat((saved_state_dict[i], torch.FloatTensor(64, 1, 7, 7).normal_(0,0.0001)), 1)
-    #model_dict = model.state_dict()
-    #saved_state_dict = {k: v for k, v in saved_state_dict.items() if k in model_dict}
-    #model_dict.update(saved_state_dict)
+    key_list = []
+    for i in saved_state_dict:
+        i_parts = i.split('.')
+        #if i_parts[1]=='layer5':
+        #    print(i)
+        #    key_list.append(i)
+        if i_parts[1] == 'conv1':
+            saved_state_dict[i] = torch.cat((saved_state_dict[i], torch.FloatTensor(64, 1, 7, 7).normal_(0,0.0001)), 1)
+    #for key in key_list:
+    #    print(key)
+    #    del saved_state_dict[key]
+    #key_list = [key.replace('Scale.layer5', 'classifier') for key in key_list]
+    #for key in key_list:
+    #    print(key)
+    #    saved_state_dict[key] = model.state_dict()[key]
+    model_dict = model.state_dict()
+    saved_state_dict = {k: v for k, v in saved_state_dict.items() if k in model_dict}
+    model_dict.update(saved_state_dict)
 
-    #model.load_state_dict(model_dict)
+    model.load_state_dict(model_dict)
 
     model.cuda()
 
     db_davis_train = DAVIS2016(train=True,root=DAVIS_PATH, aug=True)
-    db_ytb_train = YTB_VOS(train=True, root=vos_path, aug=True)
+    db_ytb_train = YTB_VOS(train=True, root=VOS_PATH, aug=True)
     db_ECSSD = ECSSD(root=ECSSD_PATH, aug=True)
     db_MSRA10K = MSRA10K(root=MSRA10K_PATH, aug=True)
-    #db_train = ConcatDataset([db_davis_train, db_ECSSD, db_MSRA10K])
-    db_train = ConcatDataset([db_davis_train, db_ytb_train, db_ECSSD, db_MSRA10K])
+    db_train = ConcatDataset([db_davis_train, db_ECSSD, db_MSRA10K])
+    #db_train = ConcatDataset([db_davis_train, db_ytb_train, db_ECSSD, db_MSRA10K])
 
     train_loader = DataLoader(db_train, batch_size=batch_size, shuffle=True)
 

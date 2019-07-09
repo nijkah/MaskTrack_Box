@@ -115,20 +115,10 @@ if __name__ == '__main__':
     num_gpu = 0
     os.environ['CUDA_VISIBLE_DEVICES'] = str(num_gpu)
 
-    model = deeplab.build_Deeplab(2)
+    model = deeplab.build_Deeplab(2, pretrained=False)
     state_dict = torch.load(PRETRAINED_PATH)
-    key_list = []
-    model_dict = {}
-    for key in state_dict.keys():
-        if 'layer5' in key:
-            model_dict['classifier'+key[12:]] = state_dict[key]
-            key_list.append(key)
-        else:
-            model_dict[key] = state_dict[key]
-            
-    torch.save(model_dict, 'trained_masktrack_box.pth')
-    model.load_state_dict(model_dict)
+    model.load_state_dict(state_dict)
 
     model = model.cuda()
     model.eval()
-    #res = test_model(model, vis=True)
+    res = test_model(model, vis=True)
