@@ -17,7 +17,7 @@ from collections import OrderedDict
 from tools.utils import get_iou
 from dataloader.datasets import DAVIS2016
 
-DATASET_PATH = '/data/shared/'
+DATASET_PATH = '/home/hakjine/datasets/'
 DAVIS_PATH= os.path.join(DATASET_PATH, 'DAVIS/DAVIS-2016/')
 
 SAVE_PATH = 'MaskTrack_Box'
@@ -60,7 +60,8 @@ def test_model(model, vis=False, save=True):
             img = np.dstack([img_temp, fc])
 
             output = model(torch.FloatTensor(np.expand_dims(img, 0).transpose(0,3,1,2)).cuda())
-            output = F.interpolate(output, size=(h, w)).data.cpu().numpy().squeeze()
+            output = F.interpolate(output, size=(h, w),
+                    mode='bilinear', align_corners=True).data.cpu().numpy().squeeze()
             
             output = output.transpose(1,2,0)
             output = np.argmax(output,axis = 2)
@@ -115,8 +116,19 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = str(num_gpu)
 
     model = deeplab.build_Deeplab(2)
-    #state_dict = torch.load(PRETRAINED_PATH)
-    #model.load_state_dict(state_dict)
+    state_dict = torch.load(PRETRAINED_PATH)
+    key_list = []
+    model_dict = {}
+    for key in state_dict.keys():
+        if 'layer5' in key:
+            model_dict['classifier'+key[12:]] = state_dict[key]
+            key_list.append(key)
+        else:
+            model_dict[key] = state_dict[key]
+            
+    torch.save(model_dict, 'trained_masktrack_box.pth')
+    model.load_state_dict(model_dict)
+
     model = model.cuda()
     model.eval()
-    res = test_model(model, vis=True)
+    #res = test_model(model, vis=True)

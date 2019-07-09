@@ -15,7 +15,7 @@ from tools.loss import cross_entropy_loss_weighted, cross_entropy_loss
 from tools.utils import *
 from evaluation.evaluate import test_model
 
-DATASET_PATH = '/data/shared/'
+DATASET_PATH = '/home/hakjine/datasets/'
 DAVIS_PATH = os.path.join(DATASET_PATH, 'DAVIS/DAVIS-2016/')
 VOS_PATH = os.path.join(DATASET_PATH, 'Youtube-VOS')
 #ECSSD_PATH= '../data/ECSSD'
@@ -31,7 +31,6 @@ def main(args):
     batch_size = args.batchSize
     weight_decay = args.wtDecay
     base_lr = args.lr
-
     
     start = timeit.timeit()
 

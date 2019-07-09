@@ -10,28 +10,8 @@ from .custom_transforms import aug_batch
 from PIL import Image
 import matplotlib.pyplot as plt
 
-
-class StaticRandomCrop(object):
-    def __init__(self, image_size, crop_size):
-        self.th, self.tw = crop_size
-        h, w = image_size
-        self.h1 = random.randint(0, h - self.th)
-        self.w1 = random.randint(0, w - self.tw)
-
-    def __call__(self, img):
-        return img[self.h1:(self.h1+self.th), self.w1:(self.w1+self.tw),:]
-
-class StaticCenterCrop(object):
-    def __init__(self, image_size, crop_size):
-        self.th, self.tw = crop_size
-        self.h, self.w = image_size
-    def __call__(self, img):
-        return img[(self.h-self.th)//2:(self.h+self.th)//2, (self.w-self.tw)//2:(self.w+self.tw)//2,:]
-
 class DAVIS(data.Dataset):
-    def __init__(self, inference_size=[-1, -1], train=False, is_cropped = False, root = '', replicates = 1, aug=False):
-        self.is_cropped = is_cropped
-        self.render_size = inference_size
+    def __init__(self, train=False, root = '', replicates = 1, aug=False):
         self.replicates = replicates
         self.aug = aug
 
@@ -54,11 +34,6 @@ class DAVIS(data.Dataset):
 
         self.size = len(self.image_list)
         self.frame_size = cv2.imread(self.image_list[0]).shape
-
-        if (self.render_size[0] < 0) or (self.render_size[1] < 0) or (self.frame_size[0]%64) or (self.frame_size[1]%64):
-            self.render_size[0] = ( (self.frame_size[0])//64 ) * 64
-            self.render_size[1] = ( (self.frame_size[1])//64 ) * 64
-
        
         assert (len(self.image_list) == len(self.gt_list))
 
@@ -92,13 +67,11 @@ class DAVIS(data.Dataset):
         return self.size * self.replicates
 
 class DAVIS2016(DAVIS):
-    def __init__(self, inference_size=[-1, -1], train=False, is_cropped = False, root = '', replicates = 1, aug=False):
-        super(DAVIS2016, self).__init__(inference_size=inference_size, train=train, is_cropped = is_cropped, root = root, replicates = replicates, aug=aug)
+    def __init__(self, train=False, root = '', replicates = 1, aug=False):
+        super(DAVIS2016, self).__init__(train=train, root = root, replicates = replicates, aug=aug)
 
 class YTB_VOS(data.Dataset):
-    def __init__(self, inference_size=[-1, -1], train=False, is_cropped = False, root = '', replicates = 1, aug=False):
-        self.is_cropped = is_cropped
-        self.render_size = inference_size
+    def __init__(self, train=False, root = '', replicates = 1, aug=False):
         self.replicates = replicates
         self.aug = aug
 
@@ -124,18 +97,12 @@ class YTB_VOS(data.Dataset):
         self.size = len(self.image_list)
         self.frame_size = cv2.imread(self.image_list[0]).shape
 
-        if (self.render_size[0] < 0) or (self.render_size[1] < 0) or (self.frame_size[0]%64) or (self.frame_size[1]%64):
-            self.render_size[0] = ( (self.frame_size[0])//64 ) * 64
-            self.render_size[1] = ( (self.frame_size[1])//64 ) * 64
-
-       
         assert (len(self.image_list) == len(self.gt_list))
 
     def __getitem__(self, index):
 
         index = index % self.size
         img = cv2.imread(self.image_list[index])
-
 
         gt = np.expand_dims(np.array(Image.open(self.gt_list[index])), axis=3)
         labels = np.unique(gt).tolist()
@@ -154,17 +121,13 @@ class YTB_VOS(data.Dataset):
         img = torch.from_numpy(img.astype(np.float32))
         gt = torch.from_numpy(gt.astype(np.float32))
 
-
-
         return img, gt
 
     def __len__(self):
         return self.size * self.replicates
 
 class ECSSD(data.Dataset):
-    def __init__(self, inference_size=[-1, -1], is_cropped = False, root = '', replicates = 1, aug=False):
-        self.is_cropped = is_cropped
-        self.render_size = inference_size
+    def __init__(self, root = '', replicates = 1, aug=False):
         self.replicates = replicates
         self.aug = aug
 
@@ -182,11 +145,6 @@ class ECSSD(data.Dataset):
 
         self.size = len(self.image_list)
         self.frame_size = cv2.imread(self.image_list[0]).shape
-
-        if (self.render_size[0] < 0) or (self.render_size[1] < 0) or (self.frame_size[0]%64) or (self.frame_size[1]%64):
-            self.render_size[0] = ( (self.frame_size[0])//64 ) * 64
-            self.render_size[1] = ( (self.frame_size[1])//64 ) * 64
-
        
         assert (len(self.image_list) == len(self.gt_list))
 
@@ -220,9 +178,7 @@ class ECSSD(data.Dataset):
         return self.size * self.replicates
 
 class MSRA10K(data.Dataset):
-    def __init__(self, inference_size=[-1, -1], is_cropped = False, root = '', replicates = 1, aug=False):
-        self.is_cropped = is_cropped
-        self.render_size = inference_size
+    def __init__(self, root = '', replicates = 1, aug=False):
         self.replicates = replicates
         self.aug = aug
 
@@ -242,11 +198,6 @@ class MSRA10K(data.Dataset):
         self.size = len(self.image_list)
         self.frame_size = cv2.imread(self.image_list[0]).shape
 
-        if (self.render_size[0] < 0) or (self.render_size[1] < 0) or (self.frame_size[0]%64) or (self.frame_size[1]%64):
-            self.render_size[0] = ( (self.frame_size[0])//64 ) * 64
-            self.render_size[1] = ( (self.frame_size[1])//64 ) * 64
-
-       
         assert (len(self.image_list) == len(self.gt_list))
 
     def __getitem__(self, index):
@@ -271,8 +222,6 @@ class MSRA10K(data.Dataset):
 
         img = torch.from_numpy(img.astype(np.float32))
         gt = torch.from_numpy(gt.astype(np.float32))
-
-
 
         return img, gt
 

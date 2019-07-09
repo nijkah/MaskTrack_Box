@@ -30,7 +30,7 @@ class Classifier_Module(nn.Module):
 class MS_Deeplab(nn.Module):
     def __init__(self, NoLabels, pretrained=False):
         super(MS_Deeplab,self).__init__()
-        self.backbone= build_backbone('resnet', in_channel=4, pretrained=pretrained)
+        self.Scale = build_backbone('resnet', in_channel=4, pretrained=pretrained)
         self.classifier = _make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24], NoLabels)
 
         self.register_buffer('mean', torch.FloatTensor([0.485, 0.456, 0.406, 0]).view(1,4,1,1))
@@ -39,7 +39,7 @@ class MS_Deeplab(nn.Module):
     
     def forward(self, x):
         x = (x - self.mean) / self.std
-        out = self.backbone(x)
+        out = self.Scale(x)
         out = self.classifier(out)
 
         return out
@@ -53,12 +53,12 @@ class MS_Deeplab(nn.Module):
         """
         b = []
 
-        b.append(self.backbone.conv1)
-        b.append(self.backbone.bn1)
-        b.append(self.backbone.layer1)
-        b.append(self.backbone.layer2)
-        b.append(self.backbone.layer3)
-        b.append(self.backbone.layer4)
+        b.append(self.Scale.conv1)
+        b.append(self.Scale.bn1)
+        b.append(self.Scale.layer1)
+        b.append(self.Scale.layer2)
+        b.append(self.Scale.layer3)
+        b.append(self.Scale.layer4)
 
         
         for i in range(len(b)):
