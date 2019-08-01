@@ -1,6 +1,6 @@
 # MaskTrack_Box
 
-This is simplified [MaskTrack_Box](https://arxiv.org/abs/1612.02646) implementation in pytorch.
+This is a simple implementation of [MaskTrack_Box](https://arxiv.org/abs/1612.02646) in pytorch.
 
 Compared to conventional semi-supervised video object segmentation methods,
 MaskTrack_Box requires only a bounding box of the target for video object segmentation.
